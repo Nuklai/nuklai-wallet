@@ -187,7 +187,7 @@ func (b *Backend) initClients() error {
 		log.Printf("Failed to read config file '%s', using default configuration: %v", configFile, err)
 		// TODO: replace with DEVNET
 		b.c = &Config{ // Default configuration, should be configurable
-			NuklaiRPC:   "http://localhost:9090",
+			NuklaiRPC:   "http://176.34.186.250:9650/ext/bc/bNTcYxZPePcxigmLeK3qiDHxEc7scrFgGfM4bKt8hp8MExhtW",
 			FaucetRPC:   "http://localhost:9091",
 			SearchCores: 4,
 			FeedRPC:     "http://localhost:9092",
