@@ -55,7 +55,7 @@ const Feed = () => {
   useEffect(() => {
     const fetchData = async () => {
       const [feedData, feedInfoData] = await Promise.all([
-        GetFeed(),
+        GetFeed(25), // Fetch only the last 25 feeds
         GetFeedInfo()
       ])
       getBalance()
@@ -85,7 +85,7 @@ const Feed = () => {
         duration: 5
       })
       // Refetch the feed after posting
-      setFeed(await GetFeed())
+      setFeed(await GetFeed(25)) // Fetch only the last 25 feeds
     } catch (error) {
       message.error({
         content: error.toString(),

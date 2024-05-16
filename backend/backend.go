@@ -37,12 +37,12 @@ import (
 	"github.com/ava-labs/hypersdk/rpc"
 	hutils "github.com/ava-labs/hypersdk/utils"
 	"github.com/ava-labs/hypersdk/window"
+	frpc "github.com/nuklai/nuklai-faucet/rpc"
+	"github.com/nuklai/nuklai-feed/manager"
+	ferpc "github.com/nuklai/nuklai-feed/rpc"
 	"github.com/nuklai/nuklaivm/actions"
 	"github.com/nuklai/nuklaivm/auth"
 	"github.com/nuklai/nuklaivm/challenge"
-	frpc "github.com/nuklai/nuklaivm/cmd/nuklai-faucet/rpc"
-	"github.com/nuklai/nuklaivm/cmd/nuklai-feed/manager"
-	ferpc "github.com/nuklai/nuklaivm/cmd/nuklai-feed/rpc"
 	nconsts "github.com/nuklai/nuklaivm/consts"
 	nrpc "github.com/nuklai/nuklaivm/rpc"
 )
@@ -1047,8 +1047,8 @@ func (b *Backend) parseURLs() {
 	}
 }
 
-func (b *Backend) GetFeed(subnetID, chainID string) ([]*FeedObject, error) {
-	feed, err := b.fecli.Feed(context.TODO(), subnetID, chainID)
+func (b *Backend) GetFeed(subnetID, chainID string, limit int) ([]*FeedObject, error) {
+	feed, err := b.fecli.Feed(context.TODO(), subnetID, chainID, limit)
 	if err != nil {
 		return nil, err
 	}

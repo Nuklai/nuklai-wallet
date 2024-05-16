@@ -2,13 +2,15 @@ module github.com/nuklai/nuklai-wallet
 
 go 1.21
 
-toolchain go1.21.5
+toolchain go1.21.9
 
 require (
 	github.com/ava-labs/avalanchego v1.10.18
 	github.com/ava-labs/hypersdk v0.0.16
 	github.com/joho/godotenv v1.5.1
-	github.com/nuklai/nuklaivm v0.0.0-20240515164422-45dab75a00c9
+	github.com/nuklai/nuklai-faucet v0.0.0-20240516205756-cf65ad6129d7
+	github.com/nuklai/nuklai-feed v0.0.0-20240516205740-d6cc005b1ed7
+	github.com/nuklai/nuklaivm v0.0.0-20240516160951-8175619b24ec
 	github.com/wailsapp/wails/v2 v2.8.0
 	golang.org/x/net v0.20.0
 )
@@ -78,6 +80,7 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/wailsapp/go-webview2 v1.0.10 // indirect
 	github.com/wailsapp/mimetype v1.4.1 // indirect
+	go.etcd.io/bbolt v1.3.10 // indirect
 	go.opentelemetry.io/otel v1.11.2 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.11.2 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.11.2 // indirect

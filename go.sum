@@ -372,8 +372,12 @@ github.com/nbutton23/zxcvbn-go v0.0.0-20180912185939-ae427f1e4c1d h1:AREM5mwr4u1
 github.com/nbutton23/zxcvbn-go v0.0.0-20180912185939-ae427f1e4c1d/go.mod h1:o96djdrsSGy3AWPyBgZMAGfxZNfgntdJG+11KU4QvbU=
 github.com/neilotoole/errgroup v0.1.6 h1:PODGqPXdT5BC/zCYIMoTrwV+ujKcW+gBXM6Ye9Ve3R8=
 github.com/neilotoole/errgroup v0.1.6/go.mod h1:Q2nLGf+594h0CLBs/Mbg6qOr7GtqDK7C2S41udRnToE=
-github.com/nuklai/nuklaivm v0.0.0-20240515164422-45dab75a00c9 h1:kg40/FDTwBn4PL9miaX+nxIeogUFKV3sLWhy1DpAGmU=
-github.com/nuklai/nuklaivm v0.0.0-20240515164422-45dab75a00c9/go.mod h1:9Hwt1LstSE5ohB/0n1ScMHlHonmcX3qOUJGupWta4TU=
+github.com/nuklai/nuklai-faucet v0.0.0-20240516205756-cf65ad6129d7 h1:W1aYAcmfXbhLXvEQOMLHFyYli+Br3qsut7j83tM1nYk=
+github.com/nuklai/nuklai-faucet v0.0.0-20240516205756-cf65ad6129d7/go.mod h1:0Im14CbsOwv2XFVXTdWmoA8xgEvaE7QrtQ12BThZd4E=
+github.com/nuklai/nuklai-feed v0.0.0-20240516205740-d6cc005b1ed7 h1:bddy0mfMf8J1z3L24YfBqdJoUhPclQct3zI1tIFUiHw=
+github.com/nuklai/nuklai-feed v0.0.0-20240516205740-d6cc005b1ed7/go.mod h1:bY4jD+b4JB5ZzCYR2tMDtR1tSAMcw1TmLYOpHS7qtgw=
+github.com/nuklai/nuklaivm v0.0.0-20240516160951-8175619b24ec h1:Yx214tu1A8IOAHUYcqWHo+gXd9CmkFVfsTfYBxHSFAw=
+github.com/nuklai/nuklaivm v0.0.0-20240516160951-8175619b24ec/go.mod h1:3WP6G5laQHp1fCGAzQ9hXcjwtuL6IjQQJXvtkma7AL4=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/oasisprotocol/curve25519-voi v0.0.0-20230110094441-db37f07504ce h1:/pEpMk55wH0X+E5zedGEMOdLuWmV8P4+4W3+LZaM6kg=
 github.com/oasisprotocol/curve25519-voi v0.0.0-20230110094441-db37f07504ce/go.mod h1:hVoHR2EVESiICEMbg137etN/Lx+lSrHPTD39Z/uE+2s=
@@ -487,6 +491,8 @@ github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9de
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
+go.etcd.io/bbolt v1.3.10 h1:+BqfJTcCzTItrop8mq/lbzL8wSGtj94UO/3U31shqG0=
+go.etcd.io/bbolt v1.3.10/go.mod h1:bK3UQLPJZly7IlNmV7uVHJDxfe5aK9Ll93e/74Y9oEQ=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
 go.opencensus.io v0.22.2/go.mod h1:yxeiOL68Rb0Xd1ddK5vPZ/oVn4vY4Ynel7k9FzqtOIw=

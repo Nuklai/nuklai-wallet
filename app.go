@@ -7,7 +7,7 @@ import (
 	"context"
 	"runtime/debug"
 
-	"github.com/nuklai/nuklaivm/cmd/nuklai-wallet/backend"
+	"github.com/nuklai/nuklai-wallet/backend"
 
 	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -140,8 +140,8 @@ func (a *App) GetFeedInfo() (*backend.FeedInfo, error) {
 	return a.b.GetFeedInfo()
 }
 
-func (a *App) GetFeed() ([]*backend.FeedObject, error) {
-	return a.b.GetFeed(a.GetSubnetID(), a.GetChainID())
+func (a *App) GetFeed(limit int) ([]*backend.FeedObject, error) {
+	return a.b.GetFeed(a.GetSubnetID(), a.GetChainID(), limit)
 }
 
 func (a *App) Message(message string, url string) error {
