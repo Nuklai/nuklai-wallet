@@ -1166,16 +1166,6 @@ func (b *Backend) UpdateNuklaiRPC(newNuklaiRPCUrl string) error {
 	}
 	b.parser = parser
 
-	// Update clients as well
-	_, err = b.fcli.UpdateNuklaiRPC(b.ctx, newNuklaiRPCUrl)
-	if err != nil {
-		return err
-	}
-	_, err = b.fecli.UpdateNuklaiRPC(b.ctx, newNuklaiRPCUrl)
-	if err != nil {
-		return err
-	}
-
 	// Restart the goroutines
 	b.restartCollectBlocks()
 	b.restartParseURLs()

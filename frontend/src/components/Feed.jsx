@@ -12,13 +12,11 @@ import {
   Select,
   Typography
 } from 'antd'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import {
   GetBalance,
-  GetChainID,
   GetFeed,
   GetFeedInfo,
-  GetSubnetID,
   Message,
   OpenLink,
   Transfer as Send
@@ -37,8 +35,6 @@ const Feed = () => {
   const [tipFocus, setTipFocus] = useState({})
   const [tipForm] = Form.useForm()
   const [balance, setBalance] = useState([])
-  const [subnetID, setSubnetID] = useState('')
-  const [chainID, setChainID] = useState('')
 
   // Helper function to convert timestamp
   const formatTimestamp = (timestamp) => {
@@ -46,80 +42,98 @@ const Feed = () => {
     return date.toLocaleString()
   }
 
+  const getBalance = useCallback(async () => {
+    const bals = await GetBalance()
+    const parsedBalances = bals.map((bal) => ({
+      value: bal.ID,
+      label: bal.Bal
+    }))
+    setBalance(parsedBalances)
+  }, [])
+
   // Fetch data for the feed and user's balance
   useEffect(() => {
     const fetchData = async () => {
-      const fetchedSubnetID = await GetSubnetID()
-      const fetchedChainID = await GetChainID()
-      const [feedData, feedInfoData, balances] = await Promise.all([
-        GetFeed(fetchedSubnetID, fetchedChainID),
-        GetFeedInfo(),
-        GetBalance()
+      const [feedData, feedInfoData] = await Promise.all([
+        GetFeed(),
+        GetFeedInfo()
       ])
+      getBalance()
       setFeed(feedData)
       setFeedInfo(feedInfoData)
-      setBalance(
-        balances.map((bal) => ({
-          value: bal.ID,
-          label: `${bal.Bal} ${bal.Symbol}`
-        }))
-      )
-      setSubnetID(fetchedSubnetID)
-      setChainID(fetchedChainID)
     }
 
     fetchData()
     const interval = setInterval(fetchData, 5000) // Refresh every 5 seconds
     return () => clearInterval(interval)
-  }, [])
+  }, [getBalance])
 
   // Handle creating a new post
   const onFinishCreate = async (values) => {
+    const loadingMessageKey = 'processingFeedTransaction'
+
     setOpenCreate(false)
-    message.loading({ content: 'Processing Transaction...', key: 'updatable' })
+    message.loading({
+      content: 'Processing Transaction...',
+      key: loadingMessageKey
+    })
     try {
       await Message(values.Message, values.URL)
       message.success({
         content: 'Transaction Successful!',
-        key: 'updatable',
-        duration: 2
+        key: loadingMessageKey,
+        duration: 5
       })
       // Refetch the feed after posting
       setFeed(await GetFeed())
     } catch (error) {
       message.error({
         content: error.toString(),
-        key: 'updatable',
-        duration: 2
+        key: loadingMessageKey,
+        duration: 5
       })
     }
   }
 
   // Handle sending a tip
   const onFinishTip = async (values) => {
+    const loadingMessageKey = 'processingTipTransaction' // Unique key for the loading message
+
     setOpenTip(false)
-    message.loading({ content: 'Processing Transaction...', key: 'updatable' })
+    message.loading({
+      content: 'Processing Transaction...',
+      key: loadingMessageKey
+    })
     try {
       // Convert the Amount to a string
       const amountAsString = values.Amount.toString()
+
+      const start = new Date().getTime()
       await Send(
         values.Asset,
         tipFocus.Address,
         amountAsString,
         `[${tipFocus.ID}]: ${values.Memo}`
       )
+      const finish = new Date().getTime()
+
+      // Calculate the duration in seconds
+      const durationInSeconds = ((finish - start) / 1000).toFixed(2)
+
+      // Update the message to success after the transaction is finalized and include the duration in seconds
       message.success({
-        content: 'Tip Sent Successfully!',
-        key: 'updatable',
-        duration: 2
+        content: `Tip sent successfully in (${durationInSeconds} seconds)`,
+        key: loadingMessageKey, // Use the same key to update the existing message
+        duration: 5 // Set how long the success message will stay (optional)
       })
+
       // Update the balance after tipping
       setBalance(await GetBalance())
     } catch (error) {
       message.error({
         content: error.toString(),
-        key: 'updatable',
-        duration: 2
+        key: loadingMessageKey,
+        duration: 5
       })
     }
   }
