@@ -26,7 +26,7 @@ export function GetConfig():Promise<backend.Config>;
 
 export function GetFaucetSolutions():Promise<backend.FaucetSolutions>;
 
-export function GetFeed():Promise<Array<backend.FeedObject>>;
+export function GetFeed(arg1:number):Promise<Array<backend.FeedObject>>;
 
 export function GetFeedInfo():Promise<backend.FeedInfo>;
 

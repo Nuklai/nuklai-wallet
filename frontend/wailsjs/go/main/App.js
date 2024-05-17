@@ -50,8 +50,8 @@ export function GetFaucetSolutions() {
   return window['go']['main']['App']['GetFaucetSolutions']();
 }
 
-export function GetFeed() {
-  return window['go']['main']['App']['GetFeed']();
+export function GetFeed(arg1) {
+  return window['go']['main']['App']['GetFeed'](arg1);
 }
 
 export function GetFeedInfo() {
