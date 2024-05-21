@@ -1,8 +1,56 @@
 # Nuklai Wallet
 
-The Nuklai Wallet is a Vite development server that provides very fast hot reload of your frontend changes.
+The Nuklai Wallet is the native wallet for the Nuklai network, designed to provide users with a comprehensive and user-friendly interface for managing their assets and interacting with the Nuklai blockchain. Below are the features and functionalities integrated into the Nuklai Wallet:
 
-By default, it'll open a new desktop app for the wallet however, you can also go to [http://localhost:34115](http://localhost:34115) on your browser to interact with the wallet.
+## Features
+
+**1. Local Wallet:**
+
+- Manage your assets securely within the wallet.
+- Access and manage private keys and public keys.
+
+**2. Network Connectivity:**
+
+- Connect to various networks such as Devnet, Testnet, and Mainnet directly from the wallet UI.
+
+**3. Local Blockchain Explorer:**
+
+- View detailed information about the Nuklai blockchain directly within the wallet.
+- Explore blocks, transactions, tokens, and other blockchain data.
+
+**4. Faucet Integration:**
+
+- Request test NAI tokens to your wallet using the integrated faucet service.
+- Easily acquire tokens for testing and development purposes.
+
+**5. Mint Page:**
+
+- Create and mint tokens to any address.
+- Customize tokens according to your needs and transfer them seamlessly.
+
+**6. Feed Page:**
+
+- Post messages and URLs to the blockchain within a transaction memo.
+- Use the feed as a mini blog to share updates and information.
+
+**7. Transactions History:**
+
+- View a comprehensive history of all transactions made with your wallet.
+- Track incoming and outgoing transactions, including detailed transaction metadata.
+
+**8. Wallet Details:**
+
+- Access detailed information about your wallet, including private key, public key, and account balances.
+
+**9. Nuklai Subnet Details:**
+
+- View essential details about the Nuklai Subnet such as chainID and subnetID.
+
+**10. Custom RPC URL:**
+
+- Update the Nuklai RPC URL to point to any URL of your choice.
+- Connect to your local Nuklai Subnet or any custom Nuklai Subnet deployed elsewhere.
+- This feature is particularly useful for developers running a local instance of the Nuklai Subnet.
 
 ## Build
 
@@ -17,7 +65,7 @@ cp .env.example .env;
 wails dev
 ```
 
-Then, go to [http://localhost:34115](http://localhost:34115)
+By default, it'll open a new desktop app for the wallet however, you can also go to [http://localhost:34115](http://localhost:34115) on your browser to interact with the wallet.
 
 ## Debug
 
