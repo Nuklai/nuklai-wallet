@@ -13,7 +13,7 @@ install_dependencies_mac() {
   brew install mingw-w64
 }
 
-# Function to install Wails
+# Function to install Wails locally
 install_wails() {
   go install -v github.com/wailsapp/wails/v2/cmd/wails@latest
 }
@@ -48,22 +48,24 @@ main() {
     exit 1
   fi
 
-  # Install dependencies based on the host OS
-  case "$(uname -s)" in
-    Linux)
-      install_dependencies_linux
-      ;;
-    Darwin)
-      install_dependencies_mac
-      ;;
-    *)
-      echo "Unsupported host OS: $(uname -s)"
-      exit 1
-      ;;
-  esac
+  # Only install local dependencies if we are not building for Windows
+  if [[ "$platform" != "windows" ]]; then
+    case "$(uname -s)" in
+      Linux)
+        install_dependencies_linux
+        ;;
+      Darwin)
+        install_dependencies_mac
+        ;;
+      *)
+        echo "Unsupported host OS: $(uname -s)"
+        exit 1
+        ;;
+    esac
 
-  # Install Wails
-  install_wails
+    # Install Wails locally
+    install_wails
+  fi
 
   # Build the project for the specified platform
   build_project $platform

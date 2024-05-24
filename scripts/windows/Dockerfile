@@ -1,8 +1,17 @@
 # Use an official Golang image as a base
 FROM golang:1.21
 
-# Install mingw-w64 for cross-compilation
-RUN apt-get update && apt-get install -y mingw-w64
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    mingw-w64 \
+    gcc-mingw-w64-x86-64 \
+    gcc-mingw-w64-i686 \
+    pkg-config \
+    curl
+
+# Install Node.js and npm
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs
 
 # Set the working directory
 WORKDIR /app
@@ -19,8 +28,11 @@ COPY . .
 # Install Wails
 RUN go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
+# Build the frontend
+RUN cd frontend && npm install && npm run build
+
 # Cross-compile for Windows
-RUN GOOS=windows GOARCH=amd64 wails build -platform windows/amd64
+RUN GOOS=windows GOARCH=amd64 CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ CGO_ENABLED=1 wails build -platform windows/amd64
 
 # Define the output directory
 VOLUME ["/app/build/bin"]
