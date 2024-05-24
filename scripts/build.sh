@@ -23,26 +23,23 @@ build_frontend() {
   (cd frontend && npm install && npm run build)
 }
 
-# Function to generate bindings
-generate_bindings() {
-  wails generate bindings
-}
-
 # Function to build the project for the specified platform
 build_project() {
   local platform=$1
   case $platform in
     windows)
-      # Ensure bindings are generated
-      generate_bindings
-
       # Build Docker image and run container for cross-compilation
-      docker build -f scripts/windows/Dockerfile -t cross-compile-wails .
+      docker build -t cross-compile-wails .
       docker run --rm -v "$(pwd)/output:/output" cross-compile-wails
       ;;
     mac)
+      if [[ "$(uname -s)" != "Darwin" ]]; then
+        echo "Cannot build for macOS on a non-macOS system."
+        exit 1
+      fi
       build_frontend
       wails build -platform darwin/amd64
+      package_mac
       ;;
     linux)
       build_frontend
@@ -53,6 +50,29 @@ build_project() {
       exit 1
       ;;
   esac
+}
+
+# Function to create a package for macOS
+package_mac() {
+  local app_name="Nuklai Wallet"
+  local build_dir="build/bin"
+  local pkg_dir="build/pkg"
+  local scripts_dir="scripts/mac"
+  local dist_file="${scripts_dir}/distribution.xml"
+
+  mkdir -p "${pkg_dir}"
+
+  # Create the component package
+  pkgbuild --root "${build_dir}/${app_name}.app" \
+           --identifier "ai.nukl.nuklaiwallet" \
+           --install-location "/Applications" \
+           "${pkg_dir}/nuklai-wallet.pkg"
+
+  # Create the product archive
+  productbuild --distribution "${dist_file}" \
+               --package-path "${pkg_dir}/nuklai-wallet.pkg" \
+               --resources "${scripts_dir}" \
+               "${pkg_dir}/Nuklai_Wallet_Installer.pkg"
 }
 
 # Main script execution

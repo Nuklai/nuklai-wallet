@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-script minSpecVersion="1">
+    <title>Nuklai Wallet</title>
+    <options>
+        <customize allow="false"/>
+        <require-scripts/>
+    </options>
+    <choices-outline>
+        <line choice="default">
+            <line choice="nuklai_wallet"/>
+        </line>
+    </choices-outline>
+    <choice id="default"/>
+    <choice id="nuklai_wallet" title="Nuklai Wallet" description="The Nuklai Wallet application">
+        <pkg-ref id="ai.nukl.nuklaiwallet"/>
+    </choice>
+    <pkg-ref id="ai.nukl.nuklaiwallet" version="1.0" onConclusion="none">file:nuklai-wallet.pkg</pkg-ref>
+</installer-script>
