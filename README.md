@@ -52,10 +52,10 @@ The Nuklai Wallet is the native wallet for the Nuklai network, designed to provi
 - Connect to your local Nuklai Subnet or any custom Nuklai Subnet deployed elsewhere.
 - This feature is particularly useful for developers running a local instance of the Nuklai Subnet.
 
-## Build
+## Setup
 
 ```bash
-./scripts/build.sh
+./scripts/setup.sh
 ```
 
 ## Run
@@ -66,6 +66,12 @@ wails dev
 ```
 
 By default, it'll open a new desktop app for the wallet however, you can also go to [http://localhost:34115](http://localhost:34115) on your browser to interact with the wallet.
+
+## Build the wallet for different platforms
+
+```bash
+./scripts/build.sh windows|mac|linux
+```
 
 ## Debug
 

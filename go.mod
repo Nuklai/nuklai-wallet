@@ -10,9 +10,9 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/nuklai/nuklai-faucet v0.0.0-20240516205756-cf65ad6129d7
 	github.com/nuklai/nuklai-feed v0.0.0-20240516205740-d6cc005b1ed7
-	github.com/nuklai/nuklaivm v0.0.0-20240516160951-8175619b24ec
-	github.com/wailsapp/wails/v2 v2.8.0
-	golang.org/x/net v0.20.0
+	github.com/nuklai/nuklaivm v0.0.0-20240515164422-45dab75a00c9
+	github.com/wailsapp/wails/v2 v2.8.2
+	golang.org/x/net v0.25.0
 )
 
 require (
@@ -93,12 +93,12 @@ require (
 	go.uber.org/mock v0.4.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.26.0 // indirect
-	golang.org/x/crypto v0.18.0 // indirect
+	golang.org/x/crypto v0.23.0 // indirect
 	golang.org/x/exp v0.0.0-20231127185646-65229373498e // indirect
 	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
-	golang.org/x/term v0.16.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/term v0.20.0 // indirect
+	golang.org/x/text v0.15.0 // indirect
 	gonum.org/v1/gonum v0.11.0 // indirect
 	google.golang.org/genproto v0.0.0-20230711160842-782d3b101e98 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230711160842-782d3b101e98 // indirect

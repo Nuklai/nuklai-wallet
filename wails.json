@@ -9,5 +9,15 @@
   "author": {
     "name": "Kiran Pachhai",
     "email": "kiran.pachhai@nukl.ai"
+  },
+  "platforms": ["darwin/amd64", "darwin/arm64", "windows/amd64", "linux/amd64"],
+  "mac": {
+    "icon": "assets/appicon.png"
+  },
+  "windows": {
+    "icon": "assets/appicon.png"
+  },
+  "linux": {
+    "icon": "assets/appicon.png"
   }
 }
