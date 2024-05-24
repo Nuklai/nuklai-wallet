@@ -18,18 +18,34 @@ install_wails() {
   go install -v github.com/wailsapp/wails/v2/cmd/wails@latest
 }
 
+# Function to build the frontend
+build_frontend() {
+  (cd frontend && npm install && npm run build)
+}
+
+# Function to generate bindings
+generate_bindings() {
+  wails generate bindings
+}
+
 # Function to build the project for the specified platform
 build_project() {
   local platform=$1
   case $platform in
     windows)
+      # Ensure bindings are generated
+      generate_bindings
+
+      # Build Docker image and run container for cross-compilation
       docker build -f scripts/windows/Dockerfile -t cross-compile-wails .
-      docker run --rm -v "$(pwd)/build/bin:/output" cross-compile-wails
+      docker run --rm -v "$(pwd)/output:/output" cross-compile-wails
       ;;
     mac)
+      build_frontend
       wails build -platform darwin/amd64
       ;;
     linux)
+      build_frontend
       wails build -platform linux/amd64
       ;;
     *)

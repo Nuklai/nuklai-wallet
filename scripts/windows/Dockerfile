@@ -1,7 +1,7 @@
 # Use an official Golang image as a base
 FROM golang:1.21
 
-# Install dependencies
+# Install dependencies for cross-compiling
 RUN apt-get update && apt-get install -y \
     mingw-w64 \
     gcc-mingw-w64-x86-64 \
@@ -34,8 +34,11 @@ RUN cd frontend && npm install && npm run build
 # Cross-compile for Windows
 RUN GOOS=windows GOARCH=amd64 CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ CGO_ENABLED=1 wails build -platform windows/amd64
 
-# Define the output directory
-VOLUME ["/app/build/bin"]
+# Ensure build output directory is present
+RUN mkdir -p /output
 
-# Define the entrypoint command
-CMD ["cp", "-r", "/app/build/bin", "/output"]
+# Define the output directory
+VOLUME ["/output"]
+
+# Copy the build output to the output directory
+CMD ["cp", "-r", "/app/build/bin/*", "/output"]
