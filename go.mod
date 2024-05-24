@@ -10,7 +10,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/nuklai/nuklai-faucet v0.0.0-20240516205756-cf65ad6129d7
 	github.com/nuklai/nuklai-feed v0.0.0-20240516205740-d6cc005b1ed7
-	github.com/nuklai/nuklaivm v0.0.0-20240516160951-8175619b24ec
+	github.com/nuklai/nuklaivm v0.0.0-20240515164422-45dab75a00c9
 	github.com/wailsapp/wails/v2 v2.8.0
 	golang.org/x/net v0.20.0
 )

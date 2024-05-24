@@ -376,8 +376,8 @@ github.com/nuklai/nuklai-faucet v0.0.0-20240516205756-cf65ad6129d7 h1:W1aYAcmfXb
 github.com/nuklai/nuklai-faucet v0.0.0-20240516205756-cf65ad6129d7/go.mod h1:0Im14CbsOwv2XFVXTdWmoA8xgEvaE7QrtQ12BThZd4E=
 github.com/nuklai/nuklai-feed v0.0.0-20240516205740-d6cc005b1ed7 h1:bddy0mfMf8J1z3L24YfBqdJoUhPclQct3zI1tIFUiHw=
 github.com/nuklai/nuklai-feed v0.0.0-20240516205740-d6cc005b1ed7/go.mod h1:bY4jD+b4JB5ZzCYR2tMDtR1tSAMcw1TmLYOpHS7qtgw=
-github.com/nuklai/nuklaivm v0.0.0-20240516160951-8175619b24ec h1:Yx214tu1A8IOAHUYcqWHo+gXd9CmkFVfsTfYBxHSFAw=
-github.com/nuklai/nuklaivm v0.0.0-20240516160951-8175619b24ec/go.mod h1:3WP6G5laQHp1fCGAzQ9hXcjwtuL6IjQQJXvtkma7AL4=
+github.com/nuklai/nuklaivm v0.0.0-20240515164422-45dab75a00c9 h1:kg40/FDTwBn4PL9miaX+nxIeogUFKV3sLWhy1DpAGmU=
+github.com/nuklai/nuklaivm v0.0.0-20240515164422-45dab75a00c9/go.mod h1:9Hwt1LstSE5ohB/0n1ScMHlHonmcX3qOUJGupWta4TU=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/oasisprotocol/curve25519-voi v0.0.0-20230110094441-db37f07504ce h1:/pEpMk55wH0X+E5zedGEMOdLuWmV8P4+4W3+LZaM6kg=
 github.com/oasisprotocol/curve25519-voi v0.0.0-20230110094441-db37f07504ce/go.mod h1:hVoHR2EVESiICEMbg137etN/Lx+lSrHPTD39Z/uE+2s=

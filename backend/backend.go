@@ -109,8 +109,7 @@ func New(fatal func(error)) *Backend {
 }
 
 func (b *Backend) Start(ctx context.Context) error {
-	// Load .env file
-	err := godotenv.Load()
+	err := godotenv.Overload() // Overload the environment variables with those from the .env file
 	if err != nil {
 		log.Println("Error loading .env file, using default paths")
 	}
