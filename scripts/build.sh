@@ -23,11 +23,19 @@ build_frontend() {
   (cd frontend && npm install && npm run build)
 }
 
+# Function to generate bindings
+generate_bindings() {
+  wails generate bindings
+}
+
 # Function to build the project for the specified platform
 build_project() {
   local platform=$1
   case $platform in
     windows)
+      # Ensure bindings are generated
+      generate_bindings
+
       # Build Docker image and run container for cross-compilation
       docker build -t cross-compile-wails .
       docker run --rm -v "$(pwd)/output:/output" cross-compile-wails
@@ -52,27 +60,23 @@ build_project() {
   esac
 }
 
-# Function to create a package for macOS
+# Function to create a DMG package for macOS using appdmg
 package_mac() {
   local app_name="Nuklai Wallet"
   local build_dir="build/bin"
-  local pkg_dir="build/pkg"
-  local scripts_dir="scripts/mac"
-  local dist_file="${scripts_dir}/distribution.xml"
+  local dmg_dir="build/dmg"
+  local dmg_config="scripts/mac/appdmg.json"
 
-  mkdir -p "${pkg_dir}"
+  mkdir -p "${dmg_dir}"
 
-  # Create the component package
-  pkgbuild --root "${build_dir}/${app_name}.app" \
-           --identifier "ai.nukl.nuklaiwallet" \
-           --install-location "/Applications" \
-           "${pkg_dir}/nuklai-wallet.pkg"
+  # Install appdmg if not already installed
+  if ! command -v appdmg &> /dev/null; then
+    echo "appdmg could not be found, installing..."
+    npm install -g appdmg
+  fi
 
-  # Create the product archive
-  productbuild --distribution "${dist_file}" \
-               --package-path "${pkg_dir}/nuklai-wallet.pkg" \
-               --resources "${scripts_dir}" \
-               "${pkg_dir}/Nuklai_Wallet_Installer.pkg"
+  # Create the DMG using appdmg
+  appdmg "${dmg_config}" "${dmg_dir}/${app_name}.dmg"
 }
 
 # Main script execution
