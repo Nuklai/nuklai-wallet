@@ -37,7 +37,7 @@ build_project() {
       generate_bindings
 
       # Build Docker image and run container for cross-compilation
-      docker build -t cross-compile-wails .
+      docker build -f scripts/windows/Dockerfile -t cross-compile-wails .
       docker run --rm -v "$(pwd)/output:/output" cross-compile-wails
       ;;
     mac)
