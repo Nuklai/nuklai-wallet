@@ -75,7 +75,7 @@ By default, it'll open a new desktop app for the wallet however, you can also go
 
 ## Debug
 
-When running `./scripts/dev.sh`, if you see an error like:
+When running `wails dev`, if you see an error like:
 
 ```
 # pkg-config --cflags  -- gtk+-3.0 webkit2gtk-4.0 gio-unix-2.0 gtk+-3.0 webkit2gtk-4.0 gio-unix-2.0 gtk+-3.0 webkit2gtk-4.0
@@ -143,6 +143,6 @@ On Mac:
 sudo port install webkit2-gtk
 ```
 
-Then, try running `./scripts/build.sh` again
+Then, try running `wails dev` again
 
-If you run the command `./scripts/build.sh` in a vscode terminal and encounter the error `symbol lookup error: /snap/core20/current/lib/x86_64-linux-gnu/libpthread.so.0: undefined symbol: __libc_pthread_init, version GLIBC_PRIVATE`, you should run the command in a console.
+If you run the command `wails dev` in a vscode terminal and encounter the error `symbol lookup error: /snap/core20/current/lib/x86_64-linux-gnu/libpthread.so.0: undefined symbol: __libc_pthread_init, version GLIBC_PRIVATE`, you should run the command in a console.
