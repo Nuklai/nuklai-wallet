@@ -1,6 +1,6 @@
 {
-  "nuklaiRPC": "http://127.0.0.1:36901/ext/bc/26oLn3Fva9x1H8iifoWMbEva9SzQ4mvY34mj2U4uuvBPyoMtnH",
-  "faucetRPC": "http://127.0.0.1:9091",
+  "nuklaiRPC": "http://api-devnet.nodes-dev.nukl.ai:9650/ext/bc/eS6rHRdyHHMyCvBMt5PYy45VxNZY5ciYQLovDtdrRpBbckmmv",
+  "faucetRPC": "https://faucet.helix.nuklaivm-dev.net",
   "searchCores": 4,
-  "feedRPC": "http://127.0.0.1:9092"
+  "feedRPC": "https://feed.helix.nuklaivm-dev.net"
 }
