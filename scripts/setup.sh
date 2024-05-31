@@ -10,4 +10,4 @@ set -o pipefail
 export CGO_CFLAGS="-O -D__BLST_PORTABLE__"  CGO_ENABLED=1
 
 # Install wails
-go install -v github.com/wailsapp/wails/v2/cmd/wails@v2.8.0
+go install -v github.com/wailsapp/wails/v2/cmd/wails@v2.8.2
