@@ -121,7 +121,7 @@ func (b *Backend) Start(ctx context.Context) error {
 
 	// Read environment variables or use default values
 	databaseFolder = getEnv("NUKLAI_WALLET_DB_PATH", filepath.Join(defaultDir, ".nuklai-wallet/db"))
-	configFile = getEnv("NUKLAI_WALLET_CONFIG_PATH", filepath.Join(defaultDir, ".nuklai-wallet/config.json"))
+	configFile = getEnv("NUKLAI_WALLET_CONFIG_PATH", filepath.Join(defaultDir, "config.json"))
 
 	if err := os.MkdirAll(databaseFolder, os.ModePerm); err != nil {
 		return fmt.Errorf("failed to create database directory '%s': %w", databaseFolder, err)
@@ -186,10 +186,10 @@ func (b *Backend) initClients() error {
 		log.Printf("Failed to read config file '%s', using default configuration: %v", configFile, err)
 		// TODO: replace with DEVNET
 		b.c = &Config{ // Default configuration, should be configurable
-			NuklaiRPC:   "http://176.34.186.250:9650/ext/bc/bNTcYxZPePcxigmLeK3qiDHxEc7scrFgGfM4bKt8hp8MExhtW",
-			FaucetRPC:   "http://localhost:9091",
+			NuklaiRPC:   "http://api-devnet.nuklaivm-dev.net:9650/ext/bc/iVNNXuhqJmGDkvDFnARE59faLXKVSo9hVMb6137pq1z8V5ryA",
+			FaucetRPC:   "https://faucet.helix.nuklaivm-dev.net",
 			SearchCores: 4,
-			FeedRPC:     "http://localhost:9092",
+			FeedRPC:     "https://feed.helix.nuklaivm-dev.net",
 		}
 	} else {
 		if err := json.Unmarshal(rawConfig, &b.c); err != nil {
