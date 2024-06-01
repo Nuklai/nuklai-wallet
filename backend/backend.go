@@ -186,7 +186,7 @@ func (b *Backend) initClients() error {
 		log.Printf("Failed to read config file '%s', using default configuration: %v", configFile, err)
 		// TODO: replace with DEVNET
 		b.c = &Config{ // Default configuration, should be configurable
-			NuklaiRPC:   "http://api-devnet.nuklaivm-dev.net:9650/ext/bc/iVNNXuhqJmGDkvDFnARE59faLXKVSo9hVMb6137pq1z8V5ryA",
+			NuklaiRPC:   "http://api-devnet.nuklaivm-dev.net:9650/ext/bc/W3kZDK2seL6J1zqbVtyBgP1xz4QzzZSueXWyHU87Yyd4QhMXx",
 			FaucetRPC:   "https://faucet.helix.nuklaivm-dev.net",
 			SearchCores: 4,
 			FeedRPC:     "https://feed.helix.nuklaivm-dev.net",
