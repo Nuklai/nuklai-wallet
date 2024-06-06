@@ -33,6 +33,7 @@ import (
 	"github.com/ava-labs/hypersdk/codec"
 	"github.com/ava-labs/hypersdk/consts"
 	"github.com/ava-labs/hypersdk/crypto/ed25519"
+	"github.com/ava-labs/hypersdk/fees"
 	"github.com/ava-labs/hypersdk/pubsub"
 	"github.com/ava-labs/hypersdk/rpc"
 	hutils "github.com/ava-labs/hypersdk/utils"
@@ -261,10 +262,11 @@ func (b *Backend) collectBlocks() {
 					b.fatal(err)
 					return
 				}
-				consumed := chain.Dimensions{}
+				consumed := fees.Dimensions{}
 				failTxs := 0
-				for i, result := range results {
-					nconsumed, err := chain.Add(consumed, result.Consumed)
+				for i, _ := range blk.Txs {
+					result := results[i]
+					nconsumed, err := fees.Add(consumed, result.Units)
 					if err != nil {
 						b.fatal(err)
 						return
@@ -277,141 +279,155 @@ func (b *Backend) collectBlocks() {
 						failTxs++
 					}
 
-					// We should exit action parsing as soon as possible
-					switch action := tx.Action.(type) {
-					case *actions.Transfer:
-						if actor != b.addr && action.To != b.addr {
-							continue
-						}
-						_, symbol, decimals, _, _, owner, _, err := b.ncli.Asset(b.ctx, action.Asset, true)
-						if err != nil {
-							b.fatal(err)
-							return
-						}
-						txInfo := &TransactionInfo{
-							ID:        tx.ID().String(),
-							Size:      fmt.Sprintf("%.2fKB", float64(tx.Size())/units.KiB),
-							Success:   result.Success,
-							Timestamp: blk.Tmstmp,
-							Actor:     codec.MustAddressBech32(nconsts.HRP, actor),
-							Type:      "Transfer",
-							Units:     hcli.ParseDimensions(result.Consumed),
-							Fee:       fmt.Sprintf("%s %s", hutils.FormatBalance(result.Fee, nconsts.Decimals), nconsts.Symbol),
-						}
-						if result.Success {
-							txInfo.Summary = fmt.Sprintf("%s %s -> %s", hutils.FormatBalance(action.Value, decimals), symbol, codec.MustAddressBech32(nconsts.HRP, action.To))
-							if len(action.Memo) > 0 {
-								txInfo.Summary += fmt.Sprintf(" (memo: %s)", action.Memo)
+					for i, act := range tx.Actions {
+						// We should exit action parsing as soon as possible
+						switch action := act.(type) {
+						case *actions.Transfer:
+							if actor != b.addr && action.To != b.addr {
+								continue
 							}
-						} else {
-							txInfo.Summary = string(result.Output)
-						}
-						if action.To == b.addr {
-							if actor != b.addr && result.Success {
-								b.txAlertLock.Lock()
-								b.transactionAlerts = append(b.transactionAlerts, &Alert{"info", fmt.Sprintf("Received %s %s from Transfer", hutils.FormatBalance(action.Value, decimals), symbol)})
-								b.txAlertLock.Unlock()
-							}
-							hasAsset, err := b.s.HasAsset(b.subnetID, b.chainID, action.Asset)
+							_, symbol, decimals, _, _, owner, err := b.ncli.Asset(b.ctx, action.Asset, true)
 							if err != nil {
 								b.fatal(err)
 								return
 							}
-							if !hasAsset {
-								if err := b.s.StoreAsset(b.subnetID, b.chainID, action.Asset, b.addrStr == owner); err != nil {
+							outputs := result.Outputs[i]
+
+							for _, output := range outputs {
+								txInfo := &TransactionInfo{
+									ID:        tx.ID().String(),
+									Size:      fmt.Sprintf("%.2fKB", float64(tx.Size())/units.KiB),
+									Success:   result.Success,
+									Timestamp: blk.Tmstmp,
+									Actor:     codec.MustAddressBech32(nconsts.HRP, actor),
+									Type:      "Transfer",
+									Units:     hcli.ParseDimensions(result.Units),
+									Fee:       fmt.Sprintf("%s %s", hutils.FormatBalance(result.Fee, nconsts.Decimals), nconsts.Symbol),
+								}
+								if result.Success {
+									txInfo.Summary = fmt.Sprintf("%s %s -> %s", hutils.FormatBalance(action.Value, decimals), symbol, codec.MustAddressBech32(nconsts.HRP, action.To))
+									if len(action.Memo) > 0 {
+										txInfo.Summary += fmt.Sprintf(" (memo: %s)", action.Memo)
+									}
+								} else {
+									txInfo.Summary = string(output)
+
+								}
+								if action.To == b.addr {
+									if actor != b.addr && result.Success {
+										b.txAlertLock.Lock()
+										b.transactionAlerts = append(b.transactionAlerts, &Alert{"info", fmt.Sprintf("Received %s %s from Transfer", hutils.FormatBalance(action.Value, decimals), symbol)})
+										b.txAlertLock.Unlock()
+									}
+									hasAsset, err := b.s.HasAsset(b.subnetID, b.chainID, action.Asset)
+									if err != nil {
+										b.fatal(err)
+										return
+									}
+									if !hasAsset {
+										if err := b.s.StoreAsset(b.subnetID, b.chainID, action.Asset, b.addrStr == owner); err != nil {
+											b.fatal(err)
+											return
+										}
+									}
+									if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
+										b.fatal(err)
+										return
+									}
+								} else if actor == b.addr {
+									if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
+										b.fatal(err)
+										return
+									}
+								}
+							}
+						case *actions.CreateAsset:
+							if actor != b.addr {
+								continue
+							}
+							if err := b.s.StoreAsset(b.subnetID, b.chainID, tx.ID(), true); err != nil {
+								b.fatal(err)
+								return
+							}
+							outputs := result.Outputs[i]
+							for _, output := range outputs {
+								txInfo := &TransactionInfo{
+									ID:        tx.ID().String(),
+									Size:      fmt.Sprintf("%.2fKB", float64(tx.Size())/units.KiB),
+									Success:   result.Success,
+									Timestamp: blk.Tmstmp,
+									Actor:     codec.MustAddressBech32(nconsts.HRP, actor),
+									Type:      "CreateAsset",
+									Units:     hcli.ParseDimensions(result.Units),
+									Fee:       fmt.Sprintf("%s %s", hutils.FormatBalance(result.Fee, nconsts.Decimals), nconsts.Symbol),
+								}
+								if result.Success {
+									txInfo.Summary = fmt.Sprintf("assetID: %s symbol: %s decimals: %d metadata: %s", tx.ID(), action.Symbol, action.Decimals, action.Metadata)
+								} else {
+									txInfo.Summary = string(output)
+								}
+								if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
 									b.fatal(err)
 									return
 								}
 							}
-							if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
-								b.fatal(err)
-								return
+						case *actions.MintAsset:
+							if actor != b.addr && action.To != b.addr {
+								continue
 							}
-						} else if actor == b.addr {
-							if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
-								b.fatal(err)
-								return
-							}
-						}
-					case *actions.CreateAsset:
-						if actor != b.addr {
-							continue
-						}
-						if err := b.s.StoreAsset(b.subnetID, b.chainID, tx.ID(), true); err != nil {
-							b.fatal(err)
-							return
-						}
-						txInfo := &TransactionInfo{
-							ID:        tx.ID().String(),
-							Size:      fmt.Sprintf("%.2fKB", float64(tx.Size())/units.KiB),
-							Success:   result.Success,
-							Timestamp: blk.Tmstmp,
-							Actor:     codec.MustAddressBech32(nconsts.HRP, actor),
-							Type:      "CreateAsset",
-							Units:     hcli.ParseDimensions(result.Consumed),
-							Fee:       fmt.Sprintf("%s %s", hutils.FormatBalance(result.Fee, nconsts.Decimals), nconsts.Symbol),
-						}
-						if result.Success {
-							txInfo.Summary = fmt.Sprintf("assetID: %s symbol: %s decimals: %d metadata: %s", tx.ID(), action.Symbol, action.Decimals, action.Metadata)
-						} else {
-							txInfo.Summary = string(result.Output)
-						}
-						if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
-							b.fatal(err)
-							return
-						}
-					case *actions.MintAsset:
-						if actor != b.addr && action.To != b.addr {
-							continue
-						}
-						_, symbol, decimals, _, _, owner, _, err := b.ncli.Asset(b.ctx, action.Asset, true)
-						if err != nil {
-							b.fatal(err)
-							return
-						}
-						txInfo := &TransactionInfo{
-							ID:        tx.ID().String(),
-							Timestamp: blk.Tmstmp,
-							Size:      fmt.Sprintf("%.2fKB", float64(tx.Size())/units.KiB),
-							Success:   result.Success,
-							Actor:     codec.MustAddressBech32(nconsts.HRP, actor),
-							Type:      "Mint",
-							Units:     hcli.ParseDimensions(result.Consumed),
-							Fee:       fmt.Sprintf("%s %s", hutils.FormatBalance(result.Fee, nconsts.Decimals), nconsts.Symbol),
-						}
-						if result.Success {
-							txInfo.Summary = fmt.Sprintf("%s %s -> %s", hutils.FormatBalance(action.Value, decimals), symbol, codec.MustAddressBech32(nconsts.HRP, action.To))
-						} else {
-							txInfo.Summary = string(result.Output)
-						}
-						if action.To == b.addr {
-							if actor != b.addr && result.Success {
-								b.txAlertLock.Lock()
-								b.transactionAlerts = append(b.transactionAlerts, &Alert{"info", fmt.Sprintf("Received %s %s from Mint", hutils.FormatBalance(action.Value, decimals), symbol)})
-								b.txAlertLock.Unlock()
-							}
-							hasAsset, err := b.s.HasAsset(b.subnetID, b.chainID, action.Asset)
+							_, symbol, decimals, _, _, owner, err := b.ncli.Asset(b.ctx, action.Asset, true)
 							if err != nil {
 								b.fatal(err)
 								return
 							}
-							if !hasAsset {
-								if err := b.s.StoreAsset(b.subnetID, b.chainID, action.Asset, b.addrStr == owner); err != nil {
-									b.fatal(err)
-									return
+							outputs := result.Outputs[i]
+							for _, output := range outputs {
+								txInfo := &TransactionInfo{
+									ID:        tx.ID().String(),
+									Timestamp: blk.Tmstmp,
+									Size:      fmt.Sprintf("%.2fKB", float64(tx.Size())/units.KiB),
+									Success:   result.Success,
+									Actor:     codec.MustAddressBech32(nconsts.HRP, actor),
+									Type:      "Mint",
+									Units:     hcli.ParseDimensions(result.Units),
+									Fee:       fmt.Sprintf("%s %s", hutils.FormatBalance(result.Fee, nconsts.Decimals), nconsts.Symbol),
 								}
-							}
-							if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
-								b.fatal(err)
-								return
-							}
-						} else if actor == b.addr {
-							if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
-								b.fatal(err)
-								return
+								if result.Success {
+									txInfo.Summary = fmt.Sprintf("%s %s -> %s", hutils.FormatBalance(action.Value, decimals), symbol, codec.MustAddressBech32(nconsts.HRP, action.To))
+								} else {
+									txInfo.Summary = string(output)
+								}
+								if action.To == b.addr {
+									if actor != b.addr && result.Success {
+										b.txAlertLock.Lock()
+										b.transactionAlerts = append(b.transactionAlerts, &Alert{"info", fmt.Sprintf("Received %s %s from Mint", hutils.FormatBalance(action.Value, decimals), symbol)})
+										b.txAlertLock.Unlock()
+									}
+									hasAsset, err := b.s.HasAsset(b.subnetID, b.chainID, action.Asset)
+									if err != nil {
+										b.fatal(err)
+										return
+									}
+									if !hasAsset {
+										if err := b.s.StoreAsset(b.subnetID, b.chainID, action.Asset, b.addrStr == owner); err != nil {
+											b.fatal(err)
+											return
+										}
+									}
+									if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
+										b.fatal(err)
+										return
+									}
+								} else if actor == b.addr {
+									if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
+										b.fatal(err)
+										return
+									}
+								}
 							}
 						}
 					}
+
 				}
 
 				now := time.Now()
@@ -564,7 +580,7 @@ func (b *Backend) GetUnitPrices() []*GenericInfo {
 	b.blockLock.Lock()
 	defer b.blockLock.Unlock()
 
-	info := make([]*GenericInfo, 0, len(b.stats)*chain.FeeDimensions)
+	info := make([]*GenericInfo, 0, len(b.stats)*fees.FeeDimensions)
 	for i := 0; i < len(b.stats); i++ {
 		info = append(info, &GenericInfo{b.stats[i].Timestamp, b.stats[i].Prices[0], "Bandwidth"})
 		info = append(info, &GenericInfo{b.stats[i].Timestamp, b.stats[i].Prices[1], "Compute"})
@@ -594,7 +610,7 @@ func (b *Backend) GetMyAssets() []*AssetInfo {
 		if !owned[i] {
 			continue
 		}
-		_, symbol, decimals, metadata, supply, owner, _, err := b.ncli.Asset(b.ctx, asset, false)
+		_, symbol, decimals, metadata, supply, owner, err := b.ncli.Asset(b.ctx, asset, false)
 		if err != nil {
 			b.fatal(err)
 			return nil
@@ -625,11 +641,11 @@ func (b *Backend) CreateAsset(symbol string, decimals string, metadata string) e
 	if err != nil {
 		return err
 	}
-	_, tx, maxFee, err := b.cli.GenerateTransaction(b.ctx, b.parser, nil, &actions.CreateAsset{
+	_, tx, maxFee, err := b.cli.GenerateTransaction(b.ctx, b.parser, []chain.Action{&actions.CreateAsset{
 		Symbol:   []byte(symbol),
 		Decimals: uint8(udecimals),
 		Metadata: []byte(metadata),
-	}, b.factory)
+	}}, b.factory)
 	if err != nil {
 		return fmt.Errorf("%w: unable to generate transaction", err)
 	}
@@ -649,7 +665,10 @@ func (b *Backend) CreateAsset(symbol string, decimals string, metadata string) e
 		return err
 	}
 	if !result.Success {
-		return fmt.Errorf("transaction failed on-chain: %s", result.Output)
+		outputs := result.Outputs
+		for _, output := range outputs {
+			return fmt.Errorf("transaction failed on-chain: %s", output)
+		}
 	}
 	return nil
 }
@@ -660,7 +679,7 @@ func (b *Backend) MintAsset(asset string, address string, amount string) error {
 	if err != nil {
 		return err
 	}
-	_, _, decimals, _, _, _, _, err := b.ncli.Asset(b.ctx, assetID, true)
+	_, _, decimals, _, _, _, err := b.ncli.Asset(b.ctx, assetID, true)
 	if err != nil {
 		return err
 	}
@@ -680,11 +699,11 @@ func (b *Backend) MintAsset(asset string, address string, amount string) error {
 	}
 
 	// Generate transaction
-	_, tx, maxFee, err := b.cli.GenerateTransaction(b.ctx, b.parser, nil, &actions.MintAsset{
+	_, tx, maxFee, err := b.cli.GenerateTransaction(b.ctx, b.parser, []chain.Action{&actions.MintAsset{
 		To:    to,
 		Asset: assetID,
 		Value: value,
-	}, b.factory)
+	}}, b.factory)
 	if err != nil {
 		return fmt.Errorf("%w: unable to generate transaction", err)
 	}
@@ -704,7 +723,10 @@ func (b *Backend) MintAsset(asset string, address string, amount string) error {
 		return err
 	}
 	if !result.Success {
-		return fmt.Errorf("transaction failed on-chain: %s", result.Output)
+		outputs := result.Outputs
+		for _, output := range outputs {
+			return fmt.Errorf("transaction failed on-chain: %s", output)
+		}
 	}
 	return nil
 }
@@ -715,7 +737,7 @@ func (b *Backend) Transfer(asset string, address string, amount string, memo str
 	if err != nil {
 		return err
 	}
-	_, symbol, decimals, _, _, _, _, err := b.ncli.Asset(b.ctx, assetID, true)
+	_, symbol, decimals, _, _, _, err := b.ncli.Asset(b.ctx, assetID, true)
 	if err != nil {
 		return err
 	}
@@ -744,12 +766,12 @@ func (b *Backend) Transfer(asset string, address string, amount string, memo str
 	}
 
 	// Generate transaction
-	_, tx, maxFee, err := b.cli.GenerateTransaction(b.ctx, b.parser, nil, &actions.Transfer{
+	_, tx, maxFee, err := b.cli.GenerateTransaction(b.ctx, b.parser, []chain.Action{&actions.Transfer{
 		To:    to,
 		Asset: assetID,
 		Value: value,
 		Memo:  []byte(memo),
-	}, b.factory)
+	}}, b.factory)
 	if err != nil {
 		return fmt.Errorf("%w: unable to generate transaction", err)
 	}
@@ -775,7 +797,10 @@ func (b *Backend) Transfer(asset string, address string, amount string, memo str
 		return err
 	}
 	if !result.Success {
-		return fmt.Errorf("transaction failed on-chain: %s", result.Output)
+		outputs := result.Outputs
+		for _, output := range outputs {
+			return fmt.Errorf("transaction failed on-chain: %s", output)
+		}
 	}
 	return nil
 }
@@ -800,7 +825,7 @@ func (b *Backend) GetBalance() ([]*BalanceInfo, error) {
 	}
 	balances := []*BalanceInfo{}
 	for _, asset := range assets {
-		_, symbol, decimals, _, _, _, _, err := b.ncli.Asset(b.ctx, asset, true)
+		_, symbol, decimals, _, _, _, err := b.ncli.Asset(b.ctx, asset, true)
 		if err != nil {
 			return nil, err
 		}
@@ -932,7 +957,7 @@ func (b *Backend) GetAllAssets() []*AssetInfo {
 	}
 	assets := []*AssetInfo{}
 	for _, asset := range arr {
-		_, symbol, decimals, metadata, supply, owner, _, err := b.ncli.Asset(b.ctx, asset, false)
+		_, symbol, decimals, metadata, supply, owner, err := b.ncli.Asset(b.ctx, asset, false)
 		if err != nil {
 			b.fatal(err)
 			return nil
@@ -963,7 +988,7 @@ func (b *Backend) AddAsset(asset string) error {
 	if hasAsset {
 		return nil
 	}
-	exists, _, _, _, _, owner, _, err := b.ncli.Asset(b.ctx, assetID, true)
+	exists, _, _, _, _, owner, err := b.ncli.Asset(b.ctx, assetID, true)
 	if err != nil {
 		return err
 	}
@@ -1105,12 +1130,12 @@ func (b *Backend) Message(message string, url string) error {
 	}
 
 	// Generate transaction
-	_, tx, maxFee, err := b.cli.GenerateTransaction(b.ctx, b.parser, nil, &actions.Transfer{
+	_, tx, maxFee, err := b.cli.GenerateTransaction(b.ctx, b.parser, []chain.Action{&actions.Transfer{
 		To:    recipientAddr,
 		Asset: ids.Empty,
 		Value: fee,
 		Memo:  data,
-	}, b.factory)
+	}}, b.factory)
 	if err != nil {
 		return fmt.Errorf("%w: unable to generate transaction", err)
 	}
@@ -1130,7 +1155,10 @@ func (b *Backend) Message(message string, url string) error {
 		return err
 	}
 	if !result.Success {
-		return fmt.Errorf("transaction failed on-chain: %s", result.Output)
+		outputs := result.Outputs
+		for _, output := range outputs {
+			return fmt.Errorf("transaction failed on-chain: %s", output)
+		}
 	}
 	return nil
 }
