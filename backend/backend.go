@@ -289,7 +289,7 @@ func (b *Backend) collectBlocks() {
 						failTxs++
 					}
 
-					for j, act := range tx.Actions {
+					for _, act := range tx.Actions {
 						// We should exit action parsing as soon as possible
 						switch action := act.(type) {
 						case *actions.Transfer:
@@ -303,8 +303,6 @@ func (b *Backend) collectBlocks() {
 								return
 							}
 
-							log.Printf("result.Outputs: %+v", result.Outputs)
-							output := result.Outputs[j]
 							txInfo := &TransactionInfo{
 								ID:        tx.ID().String(),
 								Size:      fmt.Sprintf("%.2fKB", float64(tx.Size())/units.KiB),
@@ -321,7 +319,13 @@ func (b *Backend) collectBlocks() {
 									txInfo.Summary += fmt.Sprintf(" (memo: %s)", action.Memo)
 								}
 							} else {
-								txInfo.Summary = string(bytes.Join(output, nil))
+								txInfo.Summary = string(bytes.Join(func() [][]byte {
+									var joined [][]byte
+									for _, v := range result.Outputs {
+										joined = append(joined, bytes.Join(v, nil))
+									}
+									return joined
+								}(), nil))
 							}
 
 							if action.To == b.addr {
@@ -360,13 +364,11 @@ func (b *Backend) collectBlocks() {
 							if actor != b.addr {
 								continue
 							}
-							if err := b.s.StoreAsset(b.subnetID, b.chainID, tx.ID(), true); err != nil {
+							if err := b.s.StoreAsset(b.subnetID, b.chainID, chain.CreateActionID(tx.ID(), 0), true); err != nil {
 								log.Printf("Failed to store asset: %v", err)
 								b.fatal(err)
 								return
 							}
-							log.Printf("result.Outputs: %+v", result.Outputs)
-							output := result.Outputs[j]
 							txInfo := &TransactionInfo{
 								ID:        tx.ID().String(),
 								Size:      fmt.Sprintf("%.2fKB", float64(tx.Size())/units.KiB),
@@ -380,7 +382,13 @@ func (b *Backend) collectBlocks() {
 							if result.Success {
 								txInfo.Summary = fmt.Sprintf("assetID: %s symbol: %s decimals: %d metadata: %s", tx.ID(), action.Symbol, action.Decimals, action.Metadata)
 							} else {
-								txInfo.Summary = string(bytes.Join(output, nil))
+								txInfo.Summary = string(bytes.Join(func() [][]byte {
+									var joined [][]byte
+									for _, v := range result.Outputs {
+										joined = append(joined, bytes.Join(v, nil))
+									}
+									return joined
+								}(), nil))
 							}
 							if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
 								log.Printf("Failed to store transaction: %v", err)
@@ -398,8 +406,6 @@ func (b *Backend) collectBlocks() {
 								b.fatal(err)
 								return
 							}
-							log.Printf("result.Outputs: %+v", result.Outputs)
-							output := result.Outputs[j]
 							txInfo := &TransactionInfo{
 								ID:        tx.ID().String(),
 								Timestamp: blk.Tmstmp,
@@ -413,7 +419,13 @@ func (b *Backend) collectBlocks() {
 							if result.Success {
 								txInfo.Summary = fmt.Sprintf("%s %s -> %s", hutils.FormatBalance(action.Value, decimals), symbol, codec.MustAddressBech32(nconsts.HRP, action.To))
 							} else {
-								txInfo.Summary = string(bytes.Join(output, nil))
+								txInfo.Summary = string(bytes.Join(func() [][]byte {
+									var joined [][]byte
+									for _, v := range result.Outputs {
+										joined = append(joined, bytes.Join(v, nil))
+									}
+									return joined
+								}(), nil))
 							}
 							if action.To == b.addr {
 								if actor != b.addr && result.Success {
@@ -695,10 +707,7 @@ func (b *Backend) CreateAsset(symbol string, decimals string, metadata string) e
 		return err
 	}
 	if !result.Success {
-		outputs := result.Outputs
-		for _, output := range outputs {
-			return fmt.Errorf("transaction failed on-chain: %s", output)
-		}
+		return fmt.Errorf("transaction failed on-chain: %s", string(result.Error))
 	}
 	return nil
 }
@@ -761,10 +770,7 @@ func (b *Backend) MintAsset(asset string, address string, amount string) error {
 		return err
 	}
 	if !result.Success {
-		outputs := result.Outputs
-		for _, output := range outputs {
-			return fmt.Errorf("transaction failed on-chain: %s", output)
-		}
+		return fmt.Errorf("transaction failed on-chain: %s", string(result.Error))
 	}
 	return nil
 }
@@ -844,10 +850,7 @@ func (b *Backend) Transfer(asset string, address string, amount string, memo str
 		return err
 	}
 	if !result.Success {
-		outputs := result.Outputs
-		for _, output := range outputs {
-			return fmt.Errorf("transaction failed on-chain: %s", output)
-		}
+		return fmt.Errorf("transaction failed on-chain: %s", string(result.Error))
 	}
 	return nil
 }
