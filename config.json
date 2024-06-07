@@ -1,5 +1,5 @@
 {
-  "nuklaiRPC": "http://api-devnet.nuklaivm-dev.net:9650/ext/bc/AE5Sgtj6evWByRD5jFXLwDTN56L5Jmf6RkMezUadGpP82Sn1o",
+  "nuklaiRPC": "http://api-devnet.nuklaivm-dev.net:9650/ext/bc/GPE88hNEbb9Qct6vJ9VpWZbTd4sJtCZj14zxNKBCrMtA46tUu",
   "faucetRPC": "https://faucet.helix.nuklaivm-dev.net",
   "searchCores": 4,
   "feedRPC": "https://feed.helix.nuklaivm-dev.net"
