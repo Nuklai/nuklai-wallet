@@ -4,6 +4,7 @@
 package backend
 
 import (
+	"bytes"
 	"container/list"
 	"context"
 	"encoding/hex"
@@ -134,6 +135,7 @@ func (b *Backend) Start(ctx context.Context) error {
 	// Open storage
 	s, err := OpenStorage(databaseFolder)
 	if err != nil {
+		log.Printf("Failed to open storage: %v", err)
 		return err
 	}
 	b.s = s
@@ -141,15 +143,18 @@ func (b *Backend) Start(ctx context.Context) error {
 	// Generate key
 	key, err := s.GetKey()
 	if err != nil {
+		log.Printf("Failed to get key: %v", err)
 		return err
 	}
 	if key == ed25519.EmptyPrivateKey {
 		// TODO: encrypt key
 		priv, err := ed25519.GeneratePrivateKey()
 		if err != nil {
+			log.Printf("Failed to generate key: %v", err)
 			return err
 		}
 		if err := s.StoreKey(priv); err != nil {
+			log.Printf("Failed to store key: %v", err)
 			return err
 		}
 		key = priv
@@ -160,13 +165,16 @@ func (b *Backend) Start(ctx context.Context) error {
 	b.addrStr = codec.MustAddressBech32(nconsts.HRP, b.addr)
 
 	if err := b.AddAddressBook("Me", b.addrStr); err != nil {
+		log.Printf("Failed to add address book entry: %v", err)
 		return err
 	}
 	if err := b.s.StoreAsset(b.subnetID, b.chainID, ids.Empty, false); err != nil {
+		log.Printf("Failed to store AVAX asset: %v", err)
 		return err
 	}
 
 	if err := b.initClients(); err != nil {
+		log.Printf("Failed to initialize clients: %v", err)
 		return err
 	}
 
@@ -247,6 +255,7 @@ func (b *Backend) collectBlocks() {
 			return // Stop the goroutine
 		default:
 			if err := b.scli.RegisterBlocks(); err != nil {
+				log.Printf("Failed to register blocks: %v", err)
 				b.fatal(err)
 				return
 			}
@@ -259,27 +268,28 @@ func (b *Backend) collectBlocks() {
 			for b.ctx.Err() == nil {
 				blk, results, prices, err := b.scli.ListenBlock(b.ctx, b.parser)
 				if err != nil {
+					log.Printf("Failed to listen for blocks: %v", err)
 					b.fatal(err)
 					return
 				}
 				consumed := fees.Dimensions{}
 				failTxs := 0
-				for i, _ := range blk.Txs {
+				for i, tx := range blk.Txs {
 					result := results[i]
 					nconsumed, err := fees.Add(consumed, result.Units)
 					if err != nil {
+						log.Printf("Failed to add consumed units: %v", err)
 						b.fatal(err)
 						return
 					}
 					consumed = nconsumed
 
-					tx := blk.Txs[i]
 					actor := tx.Auth.Actor()
 					if !result.Success {
 						failTxs++
 					}
 
-					for i, act := range tx.Actions {
+					for j, act := range tx.Actions {
 						// We should exit action parsing as soon as possible
 						switch action := act.(type) {
 						case *actions.Transfer:
@@ -288,146 +298,157 @@ func (b *Backend) collectBlocks() {
 							}
 							_, symbol, decimals, _, _, owner, err := b.ncli.Asset(b.ctx, action.Asset, true)
 							if err != nil {
+								log.Printf("Failed to fetch asset info: %v", err)
 								b.fatal(err)
 								return
 							}
-							outputs := result.Outputs[i]
 
-							for _, output := range outputs {
-								txInfo := &TransactionInfo{
-									ID:        tx.ID().String(),
-									Size:      fmt.Sprintf("%.2fKB", float64(tx.Size())/units.KiB),
-									Success:   result.Success,
-									Timestamp: blk.Tmstmp,
-									Actor:     codec.MustAddressBech32(nconsts.HRP, actor),
-									Type:      "Transfer",
-									Units:     hcli.ParseDimensions(result.Units),
-									Fee:       fmt.Sprintf("%s %s", hutils.FormatBalance(result.Fee, nconsts.Decimals), nconsts.Symbol),
+							log.Printf("result.Outputs: %+v", result.Outputs)
+							output := result.Outputs[j]
+							txInfo := &TransactionInfo{
+								ID:        tx.ID().String(),
+								Size:      fmt.Sprintf("%.2fKB", float64(tx.Size())/units.KiB),
+								Success:   result.Success,
+								Timestamp: blk.Tmstmp,
+								Actor:     codec.MustAddressBech32(nconsts.HRP, actor),
+								Type:      "Transfer",
+								Units:     hcli.ParseDimensions(result.Units),
+								Fee:       fmt.Sprintf("%s %s", hutils.FormatBalance(result.Fee, nconsts.Decimals), nconsts.Symbol),
+							}
+							if result.Success {
+								txInfo.Summary = fmt.Sprintf("%s %s -> %s", hutils.FormatBalance(action.Value, decimals), symbol, codec.MustAddressBech32(nconsts.HRP, action.To))
+								if len(action.Memo) > 0 {
+									txInfo.Summary += fmt.Sprintf(" (memo: %s)", action.Memo)
 								}
-								if result.Success {
-									txInfo.Summary = fmt.Sprintf("%s %s -> %s", hutils.FormatBalance(action.Value, decimals), symbol, codec.MustAddressBech32(nconsts.HRP, action.To))
-									if len(action.Memo) > 0 {
-										txInfo.Summary += fmt.Sprintf(" (memo: %s)", action.Memo)
-									}
-								} else {
-									txInfo.Summary = string(output)
+							} else {
+								txInfo.Summary = string(bytes.Join(output, nil))
+							}
 
+							if action.To == b.addr {
+								if actor != b.addr && result.Success {
+									b.txAlertLock.Lock()
+									b.transactionAlerts = append(b.transactionAlerts, &Alert{"info", fmt.Sprintf("Received %s %s from Transfer", hutils.FormatBalance(action.Value, decimals), symbol)})
+									b.txAlertLock.Unlock()
 								}
-								if action.To == b.addr {
-									if actor != b.addr && result.Success {
-										b.txAlertLock.Lock()
-										b.transactionAlerts = append(b.transactionAlerts, &Alert{"info", fmt.Sprintf("Received %s %s from Transfer", hutils.FormatBalance(action.Value, decimals), symbol)})
-										b.txAlertLock.Unlock()
-									}
-									hasAsset, err := b.s.HasAsset(b.subnetID, b.chainID, action.Asset)
-									if err != nil {
+								hasAsset, err := b.s.HasAsset(b.subnetID, b.chainID, action.Asset)
+								if err != nil {
+									log.Printf("Failed to check asset existence: %v", err)
+									b.fatal(err)
+									return
+								}
+								if !hasAsset {
+									if err := b.s.StoreAsset(b.subnetID, b.chainID, action.Asset, b.addrStr == owner); err != nil {
+										log.Printf("Failed to store asset: %v", err)
 										b.fatal(err)
 										return
 									}
-									if !hasAsset {
-										if err := b.s.StoreAsset(b.subnetID, b.chainID, action.Asset, b.addrStr == owner); err != nil {
-											b.fatal(err)
-											return
-										}
-									}
-									if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
-										b.fatal(err)
-										return
-									}
-								} else if actor == b.addr {
-									if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
-										b.fatal(err)
-										return
-									}
+								}
+								if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
+									log.Printf("Failed to store transaction: %v", err)
+									b.fatal(err)
+									return
+								}
+							} else if actor == b.addr {
+								if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
+									log.Printf("Failed to store transaction: %v", err)
+									b.fatal(err)
+									return
 								}
 							}
+
 						case *actions.CreateAsset:
 							if actor != b.addr {
 								continue
 							}
 							if err := b.s.StoreAsset(b.subnetID, b.chainID, tx.ID(), true); err != nil {
+								log.Printf("Failed to store asset: %v", err)
 								b.fatal(err)
 								return
 							}
-							outputs := result.Outputs[i]
-							for _, output := range outputs {
-								txInfo := &TransactionInfo{
-									ID:        tx.ID().String(),
-									Size:      fmt.Sprintf("%.2fKB", float64(tx.Size())/units.KiB),
-									Success:   result.Success,
-									Timestamp: blk.Tmstmp,
-									Actor:     codec.MustAddressBech32(nconsts.HRP, actor),
-									Type:      "CreateAsset",
-									Units:     hcli.ParseDimensions(result.Units),
-									Fee:       fmt.Sprintf("%s %s", hutils.FormatBalance(result.Fee, nconsts.Decimals), nconsts.Symbol),
-								}
-								if result.Success {
-									txInfo.Summary = fmt.Sprintf("assetID: %s symbol: %s decimals: %d metadata: %s", tx.ID(), action.Symbol, action.Decimals, action.Metadata)
-								} else {
-									txInfo.Summary = string(output)
-								}
-								if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
-									b.fatal(err)
-									return
-								}
+							log.Printf("result.Outputs: %+v", result.Outputs)
+							output := result.Outputs[j]
+							txInfo := &TransactionInfo{
+								ID:        tx.ID().String(),
+								Size:      fmt.Sprintf("%.2fKB", float64(tx.Size())/units.KiB),
+								Success:   result.Success,
+								Timestamp: blk.Tmstmp,
+								Actor:     codec.MustAddressBech32(nconsts.HRP, actor),
+								Type:      "CreateAsset",
+								Units:     hcli.ParseDimensions(result.Units),
+								Fee:       fmt.Sprintf("%s %s", hutils.FormatBalance(result.Fee, nconsts.Decimals), nconsts.Symbol),
 							}
+							if result.Success {
+								txInfo.Summary = fmt.Sprintf("assetID: %s symbol: %s decimals: %d metadata: %s", tx.ID(), action.Symbol, action.Decimals, action.Metadata)
+							} else {
+								txInfo.Summary = string(bytes.Join(output, nil))
+							}
+							if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
+								log.Printf("Failed to store transaction: %v", err)
+								b.fatal(err)
+								return
+							}
+
 						case *actions.MintAsset:
 							if actor != b.addr && action.To != b.addr {
 								continue
 							}
 							_, symbol, decimals, _, _, owner, err := b.ncli.Asset(b.ctx, action.Asset, true)
 							if err != nil {
+								log.Printf("Failed to fetch asset info: %v", err)
 								b.fatal(err)
 								return
 							}
-							outputs := result.Outputs[i]
-							for _, output := range outputs {
-								txInfo := &TransactionInfo{
-									ID:        tx.ID().String(),
-									Timestamp: blk.Tmstmp,
-									Size:      fmt.Sprintf("%.2fKB", float64(tx.Size())/units.KiB),
-									Success:   result.Success,
-									Actor:     codec.MustAddressBech32(nconsts.HRP, actor),
-									Type:      "Mint",
-									Units:     hcli.ParseDimensions(result.Units),
-									Fee:       fmt.Sprintf("%s %s", hutils.FormatBalance(result.Fee, nconsts.Decimals), nconsts.Symbol),
+							log.Printf("result.Outputs: %+v", result.Outputs)
+							output := result.Outputs[j]
+							txInfo := &TransactionInfo{
+								ID:        tx.ID().String(),
+								Timestamp: blk.Tmstmp,
+								Size:      fmt.Sprintf("%.2fKB", float64(tx.Size())/units.KiB),
+								Success:   result.Success,
+								Actor:     codec.MustAddressBech32(nconsts.HRP, actor),
+								Type:      "Mint",
+								Units:     hcli.ParseDimensions(result.Units),
+								Fee:       fmt.Sprintf("%s %s", hutils.FormatBalance(result.Fee, nconsts.Decimals), nconsts.Symbol),
+							}
+							if result.Success {
+								txInfo.Summary = fmt.Sprintf("%s %s -> %s", hutils.FormatBalance(action.Value, decimals), symbol, codec.MustAddressBech32(nconsts.HRP, action.To))
+							} else {
+								txInfo.Summary = string(bytes.Join(output, nil))
+							}
+							if action.To == b.addr {
+								if actor != b.addr && result.Success {
+									b.txAlertLock.Lock()
+									b.transactionAlerts = append(b.transactionAlerts, &Alert{"info", fmt.Sprintf("Received %s %s from Mint", hutils.FormatBalance(action.Value, decimals), symbol)})
+									b.txAlertLock.Unlock()
 								}
-								if result.Success {
-									txInfo.Summary = fmt.Sprintf("%s %s -> %s", hutils.FormatBalance(action.Value, decimals), symbol, codec.MustAddressBech32(nconsts.HRP, action.To))
-								} else {
-									txInfo.Summary = string(output)
+								hasAsset, err := b.s.HasAsset(b.subnetID, b.chainID, action.Asset)
+								if err != nil {
+									log.Printf("Failed to check asset existence: %v", err)
+									b.fatal(err)
+									return
 								}
-								if action.To == b.addr {
-									if actor != b.addr && result.Success {
-										b.txAlertLock.Lock()
-										b.transactionAlerts = append(b.transactionAlerts, &Alert{"info", fmt.Sprintf("Received %s %s from Mint", hutils.FormatBalance(action.Value, decimals), symbol)})
-										b.txAlertLock.Unlock()
-									}
-									hasAsset, err := b.s.HasAsset(b.subnetID, b.chainID, action.Asset)
-									if err != nil {
+								if !hasAsset {
+									if err := b.s.StoreAsset(b.subnetID, b.chainID, action.Asset, b.addrStr == owner); err != nil {
+										log.Printf("Failed to store asset: %v", err)
 										b.fatal(err)
 										return
 									}
-									if !hasAsset {
-										if err := b.s.StoreAsset(b.subnetID, b.chainID, action.Asset, b.addrStr == owner); err != nil {
-											b.fatal(err)
-											return
-										}
-									}
-									if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
-										b.fatal(err)
-										return
-									}
-								} else if actor == b.addr {
-									if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
-										b.fatal(err)
-										return
-									}
+								}
+								if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
+									log.Printf("Failed to store transaction: %v", err)
+									b.fatal(err)
+									return
+								}
+							} else if actor == b.addr {
+								if err := b.s.StoreTransaction(b.subnetID, b.chainID, txInfo); err != nil {
+									log.Printf("Failed to store transaction: %v", err)
+									b.fatal(err)
+									return
 								}
 							}
+
 						}
 					}
-
 				}
 
 				now := time.Now()
@@ -439,6 +460,7 @@ func (b *Backend) collectBlocks() {
 					since := now.Unix() - lastBlock
 					newWindow, err := window.Roll(tpsWindow, int(since))
 					if err != nil {
+						log.Printf("Failed to roll window: %v", err)
 						b.fatal(err)
 						return
 					}
@@ -454,6 +476,7 @@ func (b *Backend) collectBlocks() {
 				}
 				blkID, err := blk.ID()
 				if err != nil {
+					log.Printf("Failed to get block ID: %v", err)
 					b.fatal(err)
 					return
 				}
@@ -603,6 +626,7 @@ func (b *Backend) GetMyAssets() []*AssetInfo {
 	assets := []*AssetInfo{}
 	assetIDs, owned, err := b.s.GetAssets(b.subnetID, b.chainID)
 	if err != nil {
+		log.Printf("Failed to get assets: %v", err)
 		b.fatal(err)
 		return nil
 	}
@@ -612,6 +636,7 @@ func (b *Backend) GetMyAssets() []*AssetInfo {
 		}
 		_, symbol, decimals, metadata, supply, owner, err := b.ncli.Asset(b.ctx, asset, false)
 		if err != nil {
+			log.Printf("Failed to fetch asset info: %v", err)
 			b.fatal(err)
 			return nil
 		}
@@ -633,12 +658,14 @@ func (b *Backend) CreateAsset(symbol string, decimals string, metadata string) e
 	// Ensure have sufficient balance
 	bal, err := b.ncli.Balance(b.ctx, b.addrStr, ids.Empty)
 	if err != nil {
+		log.Printf("Failed to fetch balance: %v", err)
 		return err
 	}
 
 	// Generate transaction
 	udecimals, err := strconv.ParseUint(decimals, 10, 8)
 	if err != nil {
+		log.Printf("Failed to parse decimals: %v", err)
 		return err
 	}
 	_, tx, maxFee, err := b.cli.GenerateTransaction(b.ctx, b.parser, []chain.Action{&actions.CreateAsset{
@@ -653,15 +680,18 @@ func (b *Backend) CreateAsset(symbol string, decimals string, metadata string) e
 		return fmt.Errorf("insufficient balance (have: %s %s, want: %s %s)", hutils.FormatBalance(bal, nconsts.Decimals), nconsts.Symbol, hutils.FormatBalance(maxFee, nconsts.Decimals), nconsts.Symbol)
 	}
 	if err := b.scli.RegisterTx(tx); err != nil {
+		log.Printf("Failed to register transaction: %v", err)
 		return err
 	}
 
 	// Wait for transaction
 	_, dErr, result, err := b.scli.ListenTx(b.ctx)
 	if err != nil {
+		log.Printf("Failed to listen for transaction: %v", err)
 		return err
 	}
 	if dErr != nil {
+		log.Printf("Failed to listen for transaction: %v", dErr)
 		return err
 	}
 	if !result.Success {
@@ -677,24 +707,29 @@ func (b *Backend) MintAsset(asset string, address string, amount string) error {
 	// Input validation
 	assetID, err := ids.FromString(asset)
 	if err != nil {
+		log.Printf("Failed to parse asset ID: %v", err)
 		return err
 	}
 	_, _, decimals, _, _, _, err := b.ncli.Asset(b.ctx, assetID, true)
 	if err != nil {
+		log.Printf("Failed to fetch asset info: %v", err)
 		return err
 	}
 	value, err := hutils.ParseBalance(amount, decimals)
 	if err != nil {
+		log.Printf("Failed to parse balance: %v", err)
 		return err
 	}
 	to, err := codec.ParseAddressBech32(nconsts.HRP, address)
 	if err != nil {
+		log.Printf("Failed to parse address: %v", err)
 		return err
 	}
 
 	// Ensure have sufficient balance
 	bal, err := b.ncli.Balance(b.ctx, b.addrStr, ids.Empty)
 	if err != nil {
+		log.Printf("Failed to fetch balance: %v", err)
 		return err
 	}
 
@@ -711,15 +746,18 @@ func (b *Backend) MintAsset(asset string, address string, amount string) error {
 		return fmt.Errorf("insufficient balance (have: %s %s, want: %s %s)", hutils.FormatBalance(bal, nconsts.Decimals), nconsts.Symbol, hutils.FormatBalance(maxFee, nconsts.Decimals), nconsts.Symbol)
 	}
 	if err := b.scli.RegisterTx(tx); err != nil {
+		log.Printf("Failed to register transaction: %v", err)
 		return err
 	}
 
 	// Wait for transaction
 	_, dErr, result, err := b.scli.ListenTx(b.ctx)
 	if err != nil {
+		log.Printf("Failed to listen for transaction: %v", err)
 		return err
 	}
 	if dErr != nil {
+		log.Printf("Failed to listen for transaction: %v", dErr)
 		return err
 	}
 	if !result.Success {
@@ -735,24 +773,29 @@ func (b *Backend) Transfer(asset string, address string, amount string, memo str
 	// Input validation
 	assetID, err := ids.FromString(asset)
 	if err != nil {
+		log.Printf("Failed to parse asset ID: %v", err)
 		return err
 	}
 	_, symbol, decimals, _, _, _, err := b.ncli.Asset(b.ctx, assetID, true)
 	if err != nil {
+		log.Printf("Failed to fetch asset info: %v", err)
 		return err
 	}
 	value, err := hutils.ParseBalance(amount, decimals)
 	if err != nil {
+		log.Printf("Failed to parse balance: %v", err)
 		return err
 	}
 	to, err := codec.ParseAddressBech32(nconsts.HRP, address)
 	if err != nil {
+		log.Printf("Failed to parse address: %v", err)
 		return err
 	}
 
 	// Ensure have sufficient balance for transfer
 	sendBal, err := b.ncli.Balance(b.ctx, b.addrStr, assetID)
 	if err != nil {
+		log.Printf("Failed to fetch balance: %v", err)
 		return err
 	}
 	if value > sendBal {
@@ -762,6 +805,7 @@ func (b *Backend) Transfer(asset string, address string, amount string, memo str
 	// Ensure have sufficient balance for fees
 	bal, err := b.ncli.Balance(b.ctx, b.addrStr, ids.Empty)
 	if err != nil {
+		log.Printf("Failed to fetch balance: %v", err)
 		return err
 	}
 
@@ -785,15 +829,18 @@ func (b *Backend) Transfer(asset string, address string, amount string, memo str
 		}
 	}
 	if err := b.scli.RegisterTx(tx); err != nil {
+		log.Printf("Failed to register transaction: %v", err)
 		return err
 	}
 
 	// Wait for transaction
 	_, dErr, result, err := b.scli.ListenTx(b.ctx)
 	if err != nil {
+		log.Printf("Failed to listen for transaction: %v", err)
 		return err
 	}
 	if dErr != nil {
+		log.Printf("Failed to listen for transaction: %v", dErr)
 		return err
 	}
 	if !result.Success {
@@ -821,18 +868,23 @@ func (b *Backend) GetPublicKey() string {
 func (b *Backend) GetBalance() ([]*BalanceInfo, error) {
 	assets, _, err := b.s.GetAssets(b.subnetID, b.chainID)
 	if err != nil {
+		log.Printf("Error fetching assets: %v", err)
 		return nil, err
 	}
+
 	balances := []*BalanceInfo{}
 	for _, asset := range assets {
 		_, symbol, decimals, _, _, _, err := b.ncli.Asset(b.ctx, asset, true)
 		if err != nil {
+			log.Printf("Error fetching asset info for asset %v: %v", asset, err)
 			return nil, err
 		}
 		bal, err := b.ncli.Balance(b.ctx, b.addrStr, asset)
 		if err != nil {
+			log.Printf("Error fetching balance for asset %v: %v", asset, err)
 			return nil, err
 		}
+
 		strAsset := asset.String()
 		if asset == ids.Empty {
 			balances = append(balances, &BalanceInfo{ID: asset.String(), Str: fmt.Sprintf("%s %s", hutils.FormatBalance(bal, decimals), symbol), Bal: fmt.Sprintf("%s (Balance: %s)", symbol, hutils.FormatBalance(bal, decimals)), Has: bal > 0})
@@ -854,6 +906,7 @@ func (b *Backend) GetTransactions() *Transactions {
 	}
 	txs, err := b.s.GetTransactions(b.subnetID, b.chainID)
 	if err != nil {
+		log.Printf("Error fetching transactions: %v", err)
 		b.fatal(err)
 		return nil
 	}
@@ -871,6 +924,7 @@ func (b *Backend) StartFaucetSearch() (*FaucetSearchInfo, error) {
 
 	address, err := b.fcli.FaucetAddress(b.ctx)
 	if err != nil {
+		log.Printf("Failed to fetch faucet address: %v", err)
 		b.searchLock.Lock()
 		b.search = nil
 		b.searchLock.Unlock()
@@ -878,6 +932,7 @@ func (b *Backend) StartFaucetSearch() (*FaucetSearchInfo, error) {
 	}
 	salt, difficulty, err := b.fcli.Challenge(b.ctx)
 	if err != nil {
+		log.Printf("Failed to fetch challenge: %v", err)
 		b.searchLock.Lock()
 		b.search = nil
 		b.searchLock.Unlock()
@@ -908,6 +963,7 @@ func (b *Backend) StartFaucetSearch() (*FaucetSearchInfo, error) {
 		b.search = nil
 		b.searchLock.Unlock()
 		if err := b.s.StoreSolution(b.subnetID, b.chainID, search); err != nil {
+			log.Printf("Failed to store solution: %v", err)
 			b.fatal(err)
 		}
 	}()
@@ -917,6 +973,7 @@ func (b *Backend) StartFaucetSearch() (*FaucetSearchInfo, error) {
 func (b *Backend) GetFaucetSolutions() *FaucetSolutions {
 	solutions, err := b.s.GetSolutions(b.subnetID, b.chainID)
 	if err != nil {
+		log.Printf("Error fetching solutions: %v", err)
 		b.fatal(err)
 		return nil
 	}
@@ -936,6 +993,7 @@ func (b *Backend) GetFaucetSolutions() *FaucetSolutions {
 func (b *Backend) GetAddressBook() []*AddressInfo {
 	addresses, err := b.s.GetAddresses(b.subnetID, b.chainID)
 	if err != nil {
+		log.Printf("Error fetching addresses: %v", err)
 		b.fatal(err)
 		return nil
 	}
@@ -952,6 +1010,7 @@ func (b *Backend) AddAddressBook(name string, address string) error {
 func (b *Backend) GetAllAssets() []*AssetInfo {
 	arr, _, err := b.s.GetAssets(b.subnetID, b.chainID)
 	if err != nil {
+		log.Printf("Error fetching assets: %v", err)
 		b.fatal(err)
 		return nil
 	}
@@ -959,6 +1018,7 @@ func (b *Backend) GetAllAssets() []*AssetInfo {
 	for _, asset := range arr {
 		_, symbol, decimals, metadata, supply, owner, err := b.ncli.Asset(b.ctx, asset, false)
 		if err != nil {
+			log.Printf("Error fetching asset info: %v", err)
 			b.fatal(err)
 			return nil
 		}
@@ -979,10 +1039,12 @@ func (b *Backend) GetAllAssets() []*AssetInfo {
 func (b *Backend) AddAsset(asset string) error {
 	assetID, err := ids.FromString(asset)
 	if err != nil {
+		log.Printf("Failed to parse asset ID: %v", err)
 		return err
 	}
 	hasAsset, err := b.s.HasAsset(b.subnetID, b.chainID, assetID)
 	if err != nil {
+		log.Printf("Failed to check asset existence: %v", err)
 		return err
 	}
 	if hasAsset {
@@ -990,6 +1052,7 @@ func (b *Backend) AddAsset(asset string) error {
 	}
 	exists, _, _, _, _, owner, err := b.ncli.Asset(b.ctx, assetID, true)
 	if err != nil {
+		log.Printf("Failed to fetch asset info: %v", err)
 		return err
 	}
 	if !exists {
@@ -1001,6 +1064,7 @@ func (b *Backend) AddAsset(asset string) error {
 func (b *Backend) GetFeedInfo() (*FeedInfo, error) {
 	addr, fee, err := b.fecli.FeedInfo(context.TODO())
 	if err != nil {
+		log.Printf("Failed to fetch feed info: %v", err)
 		return nil, err
 	}
 	return &FeedInfo{
@@ -1033,6 +1097,7 @@ func (b *Backend) parseURLs() {
 					// Protect against maliciously crafted URLs
 					parsedURL, err := url.Parse(u)
 					if err != nil {
+						log.Printf("unable to parse URL: %v", err)
 						continue
 					}
 					if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
@@ -1049,6 +1114,7 @@ func (b *Backend) parseURLs() {
 					ctx, cancel := context.WithTimeout(b.ctx, 30*time.Second)
 					req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
 					if err != nil {
+						log.Printf("unable to create request: %v", err)
 						cancel()
 						continue
 					}
@@ -1074,6 +1140,7 @@ func (b *Backend) parseURLs() {
 func (b *Backend) GetFeed(subnetID, chainID string, limit int) ([]*FeedObject, error) {
 	feed, err := b.fecli.Feed(context.TODO(), subnetID, chainID, limit)
 	if err != nil {
+		log.Printf("Failed to fetch feed: %v", err)
 		return nil, err
 	}
 	nfeed := make([]*FeedObject, 0, len(feed))
@@ -1106,10 +1173,12 @@ func (b *Backend) Message(message string, url string) error {
 	// Get latest feed info
 	recipient, fee, err := b.fecli.FeedInfo(context.TODO())
 	if err != nil {
+		log.Printf("Failed to fetch feed info: %v", err)
 		return err
 	}
 	recipientAddr, err := codec.ParseAddressBech32(nconsts.HRP, recipient)
 	if err != nil {
+		log.Printf("Failed to parse recipient address: %v", err)
 		return err
 	}
 
@@ -1120,12 +1189,14 @@ func (b *Backend) Message(message string, url string) error {
 	}
 	data, err := json.Marshal(fc)
 	if err != nil {
+		log.Printf("Failed to marshal feed content: %v", err)
 		return err
 	}
 
 	// Ensure have sufficient balance
 	bal, err := b.ncli.Balance(b.ctx, b.addrStr, ids.Empty)
 	if err != nil {
+		log.Printf("Failed to fetch balance: %v", err)
 		return err
 	}
 
@@ -1137,21 +1208,25 @@ func (b *Backend) Message(message string, url string) error {
 		Memo:  data,
 	}}, b.factory)
 	if err != nil {
+		log.Printf("Failed to generate transaction: %v", err)
 		return fmt.Errorf("%w: unable to generate transaction", err)
 	}
 	if maxFee+fee > bal {
 		return fmt.Errorf("insufficient balance (have: %s %s, want: %s %s)", hutils.FormatBalance(bal, nconsts.Decimals), nconsts.Symbol, hutils.FormatBalance(maxFee+fee, nconsts.Decimals), nconsts.Symbol)
 	}
 	if err := b.scli.RegisterTx(tx); err != nil {
+		log.Printf("Failed to register transaction: %v", err)
 		return err
 	}
 
 	// Wait for transaction
 	_, dErr, result, err := b.scli.ListenTx(b.ctx)
 	if err != nil {
+		log.Printf("Failed to listen for transaction: %v", err)
 		return err
 	}
 	if dErr != nil {
+		log.Printf("Failed to listen for transaction: %v", dErr)
 		return err
 	}
 	if !result.Success {
@@ -1189,6 +1264,7 @@ func (b *Backend) UpdateNuklaiRPC(newNuklaiRPCUrl string) error {
 	b.ncli = nrpc.NewJSONRPCClient(newNuklaiRPCUrl, networkID, chainID)
 	parser, err := b.ncli.Parser(b.ctx)
 	if err != nil {
+		log.Printf("Failed to fetch parser: %v", err)
 		return err
 	}
 	b.parser = parser
