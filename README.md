@@ -4,6 +4,8 @@
 
 **IMPORTANT NOTICE:** This project is currently in the alpha stage of development and is not intended for use in production environments. The software may contain bugs, incomplete features, or other issues that could cause it to malfunction. Use at your own risk.
 
+**Special Notice for Wallet Users:** Handling private keys requires utmost caution. Please ensure that you do not use this wallet for storing significant amounts of cryptocurrency or sensitive information. Always keep backups of your private keys and do not share them with anyone. We strongly recommend using a separate, secure wallet for any critical assets until this software has been thoroughly tested and verified for production use.
+
 We welcome contributions and feedback to help improve this project, but please be aware that the codebase is still under active development. It is recommended to thoroughly test any changes or additions before deploying them in a production environment.
 
 Thank you for your understanding and support!
