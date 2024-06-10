@@ -1,5 +1,15 @@
 # Nuklai Wallet
 
+## Disclaimer
+
+**IMPORTANT NOTICE:** This project is currently in the alpha stage of development and is not intended for use in production environments. The software may contain bugs, incomplete features, or other issues that could cause it to malfunction. Use at your own risk.
+
+We welcome contributions and feedback to help improve this project, but please be aware that the codebase is still under active development. It is recommended to thoroughly test any changes or additions before deploying them in a production environment.
+
+Thank you for your understanding and support!
+
+## Overview
+
 The Nuklai Wallet is the native wallet for the Nuklai network, designed to provide users with a comprehensive and user-friendly interface for managing their assets and interacting with the Nuklai blockchain. Below are the features and functionalities integrated into the Nuklai Wallet:
 
 ## Features
