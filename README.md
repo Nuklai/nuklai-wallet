@@ -70,6 +70,10 @@ The Nuklai Wallet is the native wallet for the Nuklai network, designed to provi
 ./scripts/setup.sh
 ```
 
+## Verify config.json file
+
+Make sure that the value for `nuklaiRPC` in config.json are the same as defined on the [official documentation](https://docs.nukl.ai/nuklai-network/nuklai-testnet/interact-with-testnet).
+
 ## Run
 
 ```bash
