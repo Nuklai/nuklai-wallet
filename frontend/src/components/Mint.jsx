@@ -8,14 +8,17 @@ import {
   Modal,
   Select,
   Space,
-  Typography
+  Typography,
+  Divider,
+  Tooltip
 } from 'antd'
 import React, { useEffect, useState } from 'react'
 import {
   CreateAsset,
   GetAddressBook,
   GetMyAssets,
-  MintAsset
+  MintAsset,
+  AddAddressBook
 } from '../../wailsjs/go/main/App'
 import FundsCheck from './FundsCheck'
 
@@ -29,6 +32,8 @@ const Mint = () => {
   const [selectedAsset, setSelectedAsset] = useState(null)
   const [createForm] = Form.useForm()
   const [mintForm] = Form.useForm()
+  const [newNickname, setNewNickname] = useState('')
+  const [newAddress, setNewAddress] = useState('')
 
   const fetchAssetsAndAddresses = async () => {
     const [fetchedAssets, fetchedAddresses] = await Promise.all([
@@ -112,6 +117,20 @@ const Mint = () => {
     }
   }
 
+  const addAddress = async () => {
+    try {
+      await AddAddressBook(newNickname, newAddress)
+      setNewNickname('')
+      setNewAddress('')
+      fetchAssetsAndAddresses()
+    } catch (error) {
+      message.error({
+        content: `Failed to add address: ${error}`,
+        duration: 5
+      })
+    }
+  }
+
   return (
     <div style={{ maxWidth: '700px', margin: 'auto', padding: '20px' }}>
       <FundsCheck />
@@ -187,7 +206,44 @@ const Mint = () => {
             label='Recipient Address'
             rules={[{ required: true }]}
           >
-            <Select options={addresses} placeholder='Select recipient' />
+            <Select
+              options={addresses}
+              placeholder='Select recipient'
+              dropdownRender={(menu) => (
+                <>
+                  {menu}
+                  <Divider />
+                  <div style={{ backgroundColor: '#f5f5f5', padding: '10px' }}>
+                    <Typography.Paragraph style={{ textAlign: 'center', marginTop: '16px' }}>
+                      <Typography.Text strong>Add a New Address to Book:</Typography.Text>
+                    </Typography.Paragraph>
+                    <div style={{ display: 'flex', padding: 8 }}>
+                      <Input
+                        placeholder='Nickname'
+                        value={newNickname}
+                        onChange={(e) => setNewNickname(e.target.value)}
+                        style={{ marginRight: 8, width: '40%' }}
+                      />
+                      <Input
+                        placeholder='Address'
+                        value={newAddress}
+                        onChange={(e) => setNewAddress(e.target.value)}
+                        style={{ marginRight: 8, width: '40%' }}
+                      />
+                      <Tooltip title='Add to address book'>
+                      <Button
+                        type='primary'
+                        onClick={addAddress}
+                        disabled={!newNickname || !newAddress}
+                      >
+                        Add
+                      </Button>
+                      </Tooltip>
+                    </div>
+                  </div>
+                </>
+              )}
+            />
           </Form.Item>
           <Form.Item name='amount' label='Amount' rules={[{ required: true }]}>
             <InputNumber

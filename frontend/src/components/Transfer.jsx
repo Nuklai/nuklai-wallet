@@ -156,7 +156,7 @@ const Transfer = () => {
         </Form>
         <Divider />
         <Typography.Paragraph>
-          <Text strong>Add a new address to the book:</Text>
+          <Text strong>Add a New Address to Book:</Text>
         </Typography.Paragraph>
         <Space>
           <Input
