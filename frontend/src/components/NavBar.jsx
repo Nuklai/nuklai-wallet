@@ -274,7 +274,32 @@ const NavBar = () => {
       />
 
       <Drawer
-        title={<Text copyable>{address}</Text>}
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+            <Tooltip title={address}>
+              <div
+                style={{
+                  maxWidth: 'calc(100% - 50px)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  cursor: 'pointer',
+                  backgroundColor: '#f0f0f0',
+                  padding: '6px 12px',
+                  borderRadius: '4px',
+                  marginRight: '10px'
+                }}
+              >
+                {address.slice(0, 48)}...{address.slice(-6)}
+              </div>
+            </Tooltip>
+            <Text
+              copyable={{
+                text: address,
+              }}
+            />
+          </div>
+        }
         width={615}
         placement='right'
         onClose={() => setDrawerOpen(false)}
