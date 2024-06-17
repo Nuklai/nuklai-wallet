@@ -1,4 +1,4 @@
-// Copyright (C) 2024, AllianceBlock. All rights reserved.
+// Copyright (C) 2024, Nuklai. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 import App from './App'
@@ -8,7 +8,6 @@ import Faucet from './components/Faucet'
 import Feed from './components/Feed'
 import Mint from './components/Mint'
 import Transfer from './components/Transfer'
-
 
 const routes = [
   {

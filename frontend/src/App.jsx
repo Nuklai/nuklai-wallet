@@ -1,4 +1,4 @@
-// Copyright (C) 2024, AllianceBlock. All rights reserved.
+// Copyright (C) 2024, Nuklai. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 import { App as AApp, FloatButton, Layout, Row, Typography } from 'antd'

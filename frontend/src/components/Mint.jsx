@@ -1,24 +1,27 @@
+// Copyright (C) 2024, Nuklai. All rights reserved.
+// See the file LICENSE for licensing terms.
+
 import {
   App,
   Button,
   Card,
+  Divider,
   Form,
   Input,
   InputNumber,
   Modal,
   Select,
   Space,
-  Typography,
-  Divider,
-  Tooltip
+  Tooltip,
+  Typography
 } from 'antd'
 import React, { useEffect, useState } from 'react'
 import {
+  AddAddressBook,
   CreateAsset,
   GetAddressBook,
   GetMyAssets,
-  MintAsset,
-  AddAddressBook
+  MintAsset
 } from '../../wailsjs/go/main/App'
 import FundsCheck from './FundsCheck'
 
@@ -214,8 +217,12 @@ const Mint = () => {
                   {menu}
                   <Divider />
                   <div style={{ backgroundColor: '#f5f5f5', padding: '10px' }}>
-                    <Typography.Paragraph style={{ textAlign: 'center', marginTop: '16px' }}>
-                      <Typography.Text strong>Add a New Address to Book:</Typography.Text>
+                    <Typography.Paragraph
+                      style={{ textAlign: 'center', marginTop: '16px' }}
+                    >
+                      <Typography.Text strong>
+                        Add a New Address to Book:
+                      </Typography.Text>
                     </Typography.Paragraph>
                     <div style={{ display: 'flex', padding: 8 }}>
                       <Input
@@ -231,13 +238,13 @@ const Mint = () => {
                         style={{ marginRight: 8, width: '40%' }}
                       />
                       <Tooltip title='Add to address book'>
-                      <Button
-                        type='primary'
-                        onClick={addAddress}
-                        disabled={!newNickname || !newAddress}
-                      >
-                        Add
-                      </Button>
+                        <Button
+                          type='primary'
+                          onClick={addAddress}
+                          disabled={!newNickname || !newAddress}
+                        >
+                          Add
+                        </Button>
                       </Tooltip>
                     </div>
                   </div>
