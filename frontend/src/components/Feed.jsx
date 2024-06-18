@@ -78,7 +78,8 @@ const Feed = () => {
     setOpenCreate(false)
     message.loading({
       content: 'Processing Transaction...',
-      key: loadingMessageKey
+      key: loadingMessageKey,
+      duration: 0 
     })
     try {
       await Message(values.Message, values.URL)
@@ -105,7 +106,8 @@ const Feed = () => {
     setOpenTip(false)
     message.loading({
       content: 'Processing Transaction...',
-      key: loadingMessageKey
+      key: loadingMessageKey,
+      duration: 0 
     })
     try {
       // Convert the Amount to a string
