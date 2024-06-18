@@ -6,9 +6,9 @@ require (
 	github.com/ava-labs/avalanchego v1.11.6
 	github.com/ava-labs/hypersdk v0.0.17-0.20240604174603-2f5aad459975
 	github.com/joho/godotenv v1.5.1
-	github.com/nuklai/nuklai-faucet v0.1.1-0.20240607203659-8a8321b0a2bf
-	github.com/nuklai/nuklai-feed v0.1.1-0.20240607203941-a5e111751458
-	github.com/nuklai/nuklaivm v0.1.1-0.20240607124653-2bd53b7b737f
+	github.com/nuklai/nuklai-faucet v0.1.1-0.20240618161756-8c0ddef7e23d
+	github.com/nuklai/nuklai-feed v0.1.1-0.20240618161821-2b96f5e07ce7
+	github.com/nuklai/nuklaivm v0.1.1-0.20240618160655-dc5e4fddd47a
 	github.com/wailsapp/wails/v2 v2.8.2
 	golang.org/x/net v0.26.0
 )
@@ -16,7 +16,7 @@ require (
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/DataDog/zstd v1.5.5 // indirect
-	github.com/ava-labs/avalanche-network-runner v1.7.4-rc.0 // indirect
+	github.com/ava-labs/avalanche-network-runner v1.7.8-0.20240522185325-b1b5d715d548 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/btcsuite/btcd/btcutil v1.1.5 // indirect

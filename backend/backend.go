@@ -195,7 +195,7 @@ func (b *Backend) initClients() error {
 		log.Printf("Failed to read config file '%s', using default configuration: %v", configFile, err)
 		// TODO: replace with DEVNET
 		b.c = &Config{ // Default configuration, should be configurable
-			NuklaiRPC:   "http://api-devnet.nuklaivm-dev.net:9650/ext/bc/h8CqKM4q7Rs2X8CLQPyUQPtMoyDUvr7Hx26cvJnG7parK1oXb",
+			NuklaiRPC:   "http://api-devnet.nuklaivm-dev.net:9650/ext/bc/2qUd9HkKRx44ZRi8fbhCBJ3yHG8fVHNuj7ESyPYnf18dNDuEpu",
 			FaucetRPC:   "https://faucet.helix.nuklaivm-dev.net",
 			SearchCores: 4,
 			FeedRPC:     "https://feed.helix.nuklaivm-dev.net",
@@ -296,7 +296,7 @@ func (b *Backend) collectBlocks() {
 							if actor != b.addr && action.To != b.addr {
 								continue
 							}
-							_, symbol, decimals, _, _, owner, err := b.ncli.Asset(b.ctx, action.Asset, true)
+							_, symbol, decimals, _, _, owner, err := b.ncli.Asset(b.ctx, action.Asset.String(), true)
 							if err != nil {
 								log.Printf("Failed to fetch asset info: %v", err)
 								b.fatal(err)
@@ -400,7 +400,7 @@ func (b *Backend) collectBlocks() {
 							if actor != b.addr && action.To != b.addr {
 								continue
 							}
-							_, symbol, decimals, _, _, owner, err := b.ncli.Asset(b.ctx, action.Asset, true)
+							_, symbol, decimals, _, _, owner, err := b.ncli.Asset(b.ctx, action.Asset.String(), true)
 							if err != nil {
 								log.Printf("Failed to fetch asset info: %v", err)
 								b.fatal(err)
@@ -646,7 +646,7 @@ func (b *Backend) GetMyAssets() []*AssetInfo {
 		if !owned[i] {
 			continue
 		}
-		_, symbol, decimals, metadata, supply, owner, err := b.ncli.Asset(b.ctx, asset, false)
+		_, symbol, decimals, metadata, supply, owner, err := b.ncli.Asset(b.ctx, asset.String(), false)
 		if err != nil {
 			log.Printf("Failed to fetch asset info: %v", err)
 			b.fatal(err)
@@ -668,7 +668,7 @@ func (b *Backend) GetMyAssets() []*AssetInfo {
 
 func (b *Backend) CreateAsset(symbol string, decimals string, metadata string) error {
 	// Ensure have sufficient balance
-	bal, err := b.ncli.Balance(b.ctx, b.addrStr, ids.Empty)
+	bal, err := b.ncli.Balance(b.ctx, b.addrStr, nconsts.Symbol)
 	if err != nil {
 		log.Printf("Failed to fetch balance: %v", err)
 		return err
@@ -719,7 +719,7 @@ func (b *Backend) MintAsset(asset string, address string, amount string) error {
 		log.Printf("Failed to parse asset ID: %v", err)
 		return err
 	}
-	_, _, decimals, _, _, _, err := b.ncli.Asset(b.ctx, assetID, true)
+	_, _, decimals, _, _, _, err := b.ncli.Asset(b.ctx, assetID.String(), true)
 	if err != nil {
 		log.Printf("Failed to fetch asset info: %v", err)
 		return err
@@ -736,7 +736,7 @@ func (b *Backend) MintAsset(asset string, address string, amount string) error {
 	}
 
 	// Ensure have sufficient balance
-	bal, err := b.ncli.Balance(b.ctx, b.addrStr, ids.Empty)
+	bal, err := b.ncli.Balance(b.ctx, b.addrStr, nconsts.Symbol)
 	if err != nil {
 		log.Printf("Failed to fetch balance: %v", err)
 		return err
@@ -782,7 +782,7 @@ func (b *Backend) Transfer(asset string, address string, amount string, memo str
 		log.Printf("Failed to parse asset ID: %v", err)
 		return err
 	}
-	_, symbol, decimals, _, _, _, err := b.ncli.Asset(b.ctx, assetID, true)
+	_, symbol, decimals, _, _, _, err := b.ncli.Asset(b.ctx, assetID.String(), true)
 	if err != nil {
 		log.Printf("Failed to fetch asset info: %v", err)
 		return err
@@ -799,7 +799,7 @@ func (b *Backend) Transfer(asset string, address string, amount string, memo str
 	}
 
 	// Ensure have sufficient balance for transfer
-	sendBal, err := b.ncli.Balance(b.ctx, b.addrStr, assetID)
+	sendBal, err := b.ncli.Balance(b.ctx, b.addrStr, assetID.String())
 	if err != nil {
 		log.Printf("Failed to fetch balance: %v", err)
 		return err
@@ -809,7 +809,7 @@ func (b *Backend) Transfer(asset string, address string, amount string, memo str
 	}
 
 	// Ensure have sufficient balance for fees
-	bal, err := b.ncli.Balance(b.ctx, b.addrStr, ids.Empty)
+	bal, err := b.ncli.Balance(b.ctx, b.addrStr, nconsts.Symbol)
 	if err != nil {
 		log.Printf("Failed to fetch balance: %v", err)
 		return err
@@ -877,12 +877,12 @@ func (b *Backend) GetBalance() ([]*BalanceInfo, error) {
 
 	balances := []*BalanceInfo{}
 	for _, asset := range assets {
-		_, symbol, decimals, _, _, _, err := b.ncli.Asset(b.ctx, asset, true)
+		_, symbol, decimals, _, _, _, err := b.ncli.Asset(b.ctx, asset.String(), true)
 		if err != nil {
 			log.Printf("Error fetching asset info for asset %v: %v", asset, err)
 			return nil, err
 		}
-		bal, err := b.ncli.Balance(b.ctx, b.addrStr, asset)
+		bal, err := b.ncli.Balance(b.ctx, b.addrStr, asset.String())
 		if err != nil {
 			log.Printf("Error fetching balance for asset %v: %v", asset, err)
 			return nil, err
@@ -1019,7 +1019,7 @@ func (b *Backend) GetAllAssets() []*AssetInfo {
 	}
 	assets := []*AssetInfo{}
 	for _, asset := range arr {
-		_, symbol, decimals, metadata, supply, owner, err := b.ncli.Asset(b.ctx, asset, false)
+		_, symbol, decimals, metadata, supply, owner, err := b.ncli.Asset(b.ctx, asset.String(), false)
 		if err != nil {
 			log.Printf("Error fetching asset info: %v", err)
 			b.fatal(err)
@@ -1053,7 +1053,7 @@ func (b *Backend) AddAsset(asset string) error {
 	if hasAsset {
 		return nil
 	}
-	exists, _, _, _, _, owner, err := b.ncli.Asset(b.ctx, assetID, true)
+	exists, _, _, _, _, owner, err := b.ncli.Asset(b.ctx, assetID.String(), true)
 	if err != nil {
 		log.Printf("Failed to fetch asset info: %v", err)
 		return err
@@ -1197,7 +1197,7 @@ func (b *Backend) Message(message string, url string) error {
 	}
 
 	// Ensure have sufficient balance
-	bal, err := b.ncli.Balance(b.ctx, b.addrStr, ids.Empty)
+	bal, err := b.ncli.Balance(b.ctx, b.addrStr, nconsts.Symbol)
 	if err != nil {
 		log.Printf("Failed to fetch balance: %v", err)
 		return err
