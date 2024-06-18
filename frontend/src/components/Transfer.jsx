@@ -65,7 +65,8 @@ const Transfer = () => {
     // Show the loading message without a duration, so it remains until manually updated or closed
     message.loading({
       content: 'Processing Transaction...',
-      key: loadingMessageKey
+      key: loadingMessageKey,
+      duration: 0 
     })
 
     try {
