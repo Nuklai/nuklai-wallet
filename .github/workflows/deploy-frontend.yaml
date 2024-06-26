@@ -65,8 +65,8 @@ jobs:
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_AUTH_TOKEN }}" >> .npmrc
           cat .npmrc
       
-      # - name: Install dependencies
-      #   run: yarn install --frozen-lockfile
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
 
       - name: Building sources
         run: CI=false npm run build
