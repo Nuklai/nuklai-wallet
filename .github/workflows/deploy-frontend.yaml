@@ -23,7 +23,7 @@ jobs:
       PRODUCT: wallet
       APPLICATION: frontend
       AWS_DEFAULT_REGION: eu-west-1
-      BUILD_DIR: frontend/build
+      BUILD_DIR: build
 
     steps:
       - uses: actions/checkout@v4
