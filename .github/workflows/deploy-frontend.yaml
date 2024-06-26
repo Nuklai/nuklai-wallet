@@ -1,0 +1,104 @@
+name: Frontend Deployment
+
+on:
+  push:
+    branches:
+      - dev
+      - staging
+      - demo
+      - prod
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yaml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/prod' && 'prod' || github.ref == 'refs/heads/staging' && 'staging' || github.ref == 'refs/heads/dev' && 'dev' }}
+    env:
+      PRODUCT: wallet
+      APPLICATION: frontend
+      AWS_DEFAULT_REGION: eu-west-1
+      BUILD_DIR: ./frontend/build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set dev ENV
+        if: github.ref == 'refs/heads/dev'
+        run: |
+          echo "ENV=dev" >> $GITHUB_ENV
+          echo "AWS_ACCOUNT_ID=759055860286" >> $GITHUB_ENV
+          echo "AWS_S3_BUCKET=wallet-frontend-dev-759055860286-eu-west-1" >> $GITHUB_ENV
+
+      - name: Set staging ENV
+        if: github.ref == 'refs/heads/staging'
+        run: |
+          echo "ENV=staging" >> $GITHUB_ENV
+          echo "AWS_ACCOUNT_ID=924226199168" >> $GITHUB_ENV
+          echo "AWS_S3_BUCKET=wallet-frontend-staging-924226199168-eu-west-1" >> $GITHUB_ENV
+
+      - name: Set demo ENV
+        if: github.ref == 'refs/heads/demo'
+        run: |
+          echo "ENV=staging" >> $GITHUB_ENV
+          echo "AWS_ACCOUNT_ID=924226199168" >> $GITHUB_ENV
+          echo "AWS_S3_BUCKET=wallet-frontend-demo-924226199168-eu-west-1" >> $GITHUB_ENV
+          
+      - name: Set prod ENV
+        if: github.ref == 'refs/heads/prod'
+        run: |
+          echo "ENV=prod" >> $GITHUB_ENV
+          echo "AWS_ACCOUNT_ID=255525589248" >> $GITHUB_ENV
+          echo "AWS_S3_BUCKET=wallet-frontend-prod-255525589248-eu-west-1" >> $GITHUB_ENV
+
+      - name: Prepare .npmrc
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_AUTH_TOKEN }}" >> .npmrc
+          cat .npmrc
+
+      - name: Enable Corepack
+        run: corepack enable
+      
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Building sources
+        run: CI=false yarn build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/${{ env.PRODUCT }}-${{ env.APPLICATION }}-deployer-${{ env.AWS_DEFAULT_REGION }}-${{ env.ENV }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+
+      - name: Deploy to S3
+        run: |
+          aws s3 sync ${{ env.BUILD_DIR }} s3://${{ env.AWS_S3_BUCKET }} --follow-symlinks --delete --no-progress
+
+      - name: Dynamically retreive the CloudFront Distribution Ids
+        run: |
+          cloudfrontdistids=$(aws cloudfront list-distributions | jq -r ".DistributionList.Items[].ARN")
+          for dist in $cloudfrontdistids; do
+            if [ $(aws cloudfront list-tags-for-resource --resource $dist --query "Tags.Items[?Key=='Application'].Value[]" --output text) == ${{ env.APPLICATION }} ] && 
+               [ $(aws cloudfront list-tags-for-resource --resource $dist --query "Tags.Items[?Key=='Environment'].Value[]" --output text) == ${{ env.ENV }} ]; then
+              CLOUDFRONT_DISTRIBUTION_IDS="$CLOUDFRONT_DISTRIBUTION_IDS ${dist##*/}"
+            fi
+          done
+          echo "Cloudfront distributionids : $CLOUDFRONT_DISTRIBUTION_IDS"
+          echo "CLOUDFRONT_DISTRIBUTION_IDS=$CLOUDFRONT_DISTRIBUTION_IDS" >> $GITHUB_ENV
+
+      - name: Invalidate CloudFront cache of distributions ${{ env.CLOUDFRONT_DISTRIBUTION_IDS }}
+        run: |
+          for dist in $CLOUDFRONT_DISTRIBUTION_IDS; do
+            echo "Create invalidation for distribution-id $dist"
+            aws cloudfront create-invalidation --distribution-id $dist --paths "/*"
+          done
