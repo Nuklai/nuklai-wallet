@@ -69,7 +69,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Building sources
-        run: CI=false npm run build
+        run: npm run build
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
