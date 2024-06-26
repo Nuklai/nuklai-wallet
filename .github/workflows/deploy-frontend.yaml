@@ -23,7 +23,7 @@ jobs:
       PRODUCT: wallet
       APPLICATION: frontend
       AWS_DEFAULT_REGION: eu-west-1
-      BUILD_DIR: build
+      BUILD_DIR: frontend/build
 
     steps:
       - uses: actions/checkout@v4
@@ -71,7 +71,9 @@ jobs:
           npm ci
 
       - name: Building sources
-        run: npm run build --if-present
+        run: |
+          cd frontend
+          npm run build --if-present
         working-directory: ${{ env.BUILD_DIR }}
 
       - name: Configure AWS credentials
