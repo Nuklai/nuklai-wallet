@@ -66,10 +66,11 @@ jobs:
           cat .npmrc
       
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
 
       - name: Building sources
-        run: npm run build
+        run: npm run build --if-present
+        working-directory: ${{ env.BUILD_DIR }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
