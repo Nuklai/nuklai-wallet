@@ -72,7 +72,7 @@ jobs:
 
       - name: Building sources
         run: |
-          cd frontend
+          mkdir build
           npm run build --if-present
         working-directory: ${{ env.BUILD_DIR }}
 
