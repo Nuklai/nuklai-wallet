@@ -1,3 +1,4 @@
 {
-	"cSpell.words": ["Nuklai"]
+  "cSpell.words": ["Nuklai", "wailsjs"],
+  "editor.defaultFormatter": "biomejs.biome"
 }
