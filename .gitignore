@@ -25,5 +25,6 @@ go.work
 build/
 node_modules
 frontend/dist
+frontend/wailsjs
 .nuklai-wallet
 config.json.prod
