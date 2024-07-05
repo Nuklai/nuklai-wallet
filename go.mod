@@ -9,7 +9,7 @@ require (
 	github.com/nuklai/nuklai-faucet v0.1.1-0.20240618161756-8c0ddef7e23d
 	github.com/nuklai/nuklai-feed v0.1.1-0.20240618161821-2b96f5e07ce7
 	github.com/nuklai/nuklaivm v0.1.1-0.20240618160655-dc5e4fddd47a
-	github.com/wailsapp/wails/v2 v2.8.2
+	github.com/wailsapp/wails/v2 v2.9.1
 	golang.org/x/net v0.26.0
 )
 

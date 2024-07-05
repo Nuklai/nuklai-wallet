@@ -11,13 +11,12 @@ import (
 
 // Inspiration: https://gist.github.com/inotnako/c4a82f6723f6ccea5d83c5d3689373dd
 type HTMLMeta struct {
-	URL  string
-	Host string
-
-	SiteName    string
-	Title       string
-	Description string
-	Image       string
+	URL         string `json:"url"`
+	Host        string `json:"host"`
+	SiteName    string `json:"site_name"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Image       string `json:"image"`
 }
 
 func ParseHTML(url string, host string, resp io.Reader) *HTMLMeta {
