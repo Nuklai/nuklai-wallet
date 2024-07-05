@@ -1,23 +1,23 @@
 {
-  "$schema": "https://wails.io/schemas/config.v2.json",
-  "name": "Nuklai Wallet",
-  "outputfilename": "nuklai-wallet",
-  "frontend:install": "npm install",
-  "frontend:build": "npm run build",
-  "frontend:dev:watcher": "npm run dev",
-  "frontend:dev:serverUrl": "auto",
-  "author": {
-    "name": "Kiran Pachhai",
-    "email": "kiran.pachhai@nukl.ai"
-  },
-  "platforms": ["darwin/amd64", "darwin/arm64", "windows/amd64", "linux/amd64"],
-  "mac": {
-    "icon": "assets/appicon.png"
-  },
-  "windows": {
-    "icon": "assets/appicon.png"
-  },
-  "linux": {
-    "icon": "assets/appicon.png"
-  }
+	"$schema": "https://wails.io/schemas/config.v2.json",
+	"name": "Nuklai Wallet",
+	"outputfilename": "nuklai-wallet",
+	"frontend:install": "yarn install",
+	"frontend:build": "yarn build",
+	"frontend:dev:watcher": "yarn dev",
+	"frontend:dev:serverUrl": "auto",
+	"author": {
+		"name": "Kiran Pachhai",
+		"email": "kiran.pachhai@nukl.ai"
+	},
+	"platforms": ["darwin/amd64", "darwin/arm64", "windows/amd64", "linux/amd64"],
+	"mac": {
+		"icon": "assets/appicon.png"
+	},
+	"windows": {
+		"icon": "assets/appicon.png"
+	},
+	"linux": {
+		"icon": "assets/appicon.png"
+	}
 }

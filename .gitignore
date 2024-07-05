@@ -28,3 +28,6 @@ frontend/dist
 frontend/wailsjs
 .nuklai-wallet
 config.json.prod
+.yarn
+.pnp.loader.mjs
+.pnp.cjs
