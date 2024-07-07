@@ -3,7 +3,7 @@
 
 import { App as AApp, FloatButton, Layout, Row, Typography } from 'antd';
 import { useEffect, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet } from '@tanstack/react-router';
 import { GetCommitHash, OpenLink } from '../wailsjs/go/main/App';
 import logo from './assets/images/nuklai-footer.png';
 import NavBar from './components/NavBar';

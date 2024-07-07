@@ -2,7 +2,7 @@
 // See the file LICENSE for licensing terms.
 
 import { Alert } from 'antd';
-import { Link } from 'react-router-dom';
+import { Link } from '@tanstack/react-router';
 
 const FundsCheck = () => {
   return (

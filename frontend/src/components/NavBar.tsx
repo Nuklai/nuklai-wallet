@@ -29,7 +29,7 @@ import {
   Typography,
 } from 'antd';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link as RLink, useLocation } from 'react-router-dom';
+import { Link as RLink, useLocation } from '@tanstack/react-router';
 import type { backend } from 'wailsjs/go/models';
 
 import {
@@ -249,27 +249,27 @@ const NavBar = () => {
         selectedKeys={[location.pathname.slice(1) || 'explorer']}
         items={[
           {
-            label: <RLink to={'explorer'}>Explorer</RLink>,
+            label: <RLink to='/explorer'>Explorer</RLink>,
             key: 'explorer',
             icon: <DashboardOutlined />,
           },
           {
-            label: <RLink to={'faucet'}>Faucet</RLink>,
+            label: <RLink to='/faucet'>Faucet</RLink>,
             key: 'faucet',
             icon: <GoldOutlined />,
           },
           {
-            label: <RLink to={'mint'}>Mint</RLink>,
+            label: <RLink to='/mint'>Mint</RLink>,
             key: 'mint',
             icon: <BankOutlined />,
           },
           {
-            label: <RLink to={'transfer'}>Transfer</RLink>,
+            label: <RLink to="/transfer">Transfer</RLink>,
             key: 'transfer',
             icon: <SendOutlined />,
           },
           {
-            label: <RLink to={'feed'}>Feed</RLink>,
+            label: <RLink  to="/feed">Feed</RLink>,
             key: 'feed',
             icon: <ContainerOutlined />,
           },

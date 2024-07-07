@@ -1,4 +1,9 @@
 {
-  "cSpell.words": ["Nuklai", "tailwindcss", "wailsjs"],
+  "cSpell.words": [
+    "Nuklai",
+    "tailwindcss",
+    "tanstack",
+    "wailsjs"
+  ],
   "editor.defaultFormatter": "biomejs.biome"
 }
