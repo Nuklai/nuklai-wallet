@@ -8,6 +8,8 @@ import { GetCommitHash, OpenLink } from '../wailsjs/go/main/App';
 import logo from './assets/images/nuklai-footer.png';
 import NavBar from './components/NavBar';
 
+import './App.css';
+
 const { Text } = Typography;
 const { Content } = Layout;
 
